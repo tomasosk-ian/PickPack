@@ -9,23 +9,7 @@ const preparedCompanyById = db.query.companies
   .findFirst({
     where: eq(schema.companies.id, sql.placeholder("companyId")),
     with: {
-      usuarioEntidades: {
-        with: {
-          user: {
-            columns: {
-              id: true,
-              name: true,
-              email: true,
-              image: true,
-            },
-          },
-        },
-      },
-      products: {
-        with: {
-          product: true,
-        },
-      },
+      usuarioEntidades: true,
     },
   })
   .prepare();
