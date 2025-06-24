@@ -102,3 +102,38 @@ export function setsDifieren<T>(a: Set<T>, b: Set<T>): boolean {
 
   return false;
 }
+
+export function hasPermSet(perms: Set<string>, role: PermisosValue): boolean {
+  const roleSplit = role.split(":");
+
+  if (role === "*") {
+    return perms.has("*");
+  }
+
+  for (const iRole of perms) {
+    if (role === iRole) {
+      return true;
+    }
+  }
+
+  for (let i = 0; i < roleSplit.length; i++) {
+    let roleBuilt = "";
+    for (let k = 0; k <= i; k++) {
+      if (roleBuilt !== "") {
+        roleBuilt += ":";
+      }
+
+      roleBuilt += roleSplit[k];
+    }
+
+    if (perms.has(`${roleBuilt}:*`)) {
+      return true;
+    }
+  }
+
+  if (perms.has("*")) {
+    return true;
+  }
+
+  return false;
+}
