@@ -42,12 +42,21 @@ export const clients = sqliteTable(
     prefijo: integer("prefijo"),
     telefono: integer("telefono"),
     dni: text("dni", { length: 255 }),
+    entidadId: text("entidadId")
+      .references(() => companies.id, { onDelete: "cascade" }),
   },
   (vt) => ({
     compoundKey: primaryKey(vt.identifier),
     emailIndex: index("idx_email").on(vt.email),
   }),
 );
+
+export const clientsRelations = relations(clients, ({ one }) => ({
+  entidad: one(companies, {
+    fields: [clients.entidadId],
+    references: [companies.id]
+  }),
+}));
 
 export const stores = sqliteTable(
   "stores",
@@ -60,6 +69,8 @@ export const stores = sqliteTable(
     organizationName: text("organizationName", { length: 255 }),
     description: text("description", { length: 255 }),
     firstTokenUseTime: integer("first_token_use_time").default(15)
+    entidadId: text("entidadId")
+      .references(() => companies.id, { onDelete: "cascade" }),
   },
   (vt) => ({
     compoundKey: primaryKey(vt.identifier),
@@ -73,6 +84,10 @@ export const storesRelations = relations(stores, ({ one, many }) => ({
     references: [cities.identifier],
   }),
   lockers: many(storesLockers),
+  entidad: one(companies, {
+    fields: [stores.entidadId],
+    references: [companies.id]
+  }),
 }));
 
 export const storesLockers = sqliteTable(
@@ -103,6 +118,8 @@ export const transactions = sqliteTable(
     client: text("client", { length: 255 }),
     amount: integer("amount"),
     nReserve: integer("nReserve"),
+    entidadId: text("entidadId")
+      .references(() => companies.id, { onDelete: "cascade" }),
   },
   (vt) => ({
     compoundKey: primaryKey(vt.id),
@@ -113,6 +130,10 @@ export const transactionsRelations = relations(transactions, ({ one }) => ({
   clients: one(clients, {
     fields: [transactions.client],
     references: [clients.identifier],
+  }),
+  entidad: one(companies, {
+    fields: [transactions.entidadId],
+    references: [companies.id]
   }),
 }));
 
@@ -128,11 +149,21 @@ export const sizes = sqliteTable(
     cantidadSeleccionada: integer("cantidadSeleccionada"),
     tarifa: text("tarifa", { length: 255 }),
     image: text("image", { length: 255 }),
+    entidadId: text("entidadId")
+      .references(() => companies.id, { onDelete: "cascade" }),
   },
   (vt) => ({
     compoundKey: primaryKey(vt.id),
   }),
 );
+
+export const sizesRelations = relations(sizes, ({ one }) => ({
+  entidad: one(companies, {
+    fields: [sizes.entidadId],
+    references: [companies.id]
+  }),
+}));
+
 export const reservasToClients = sqliteTable(
   "reservasToClients",
   {
@@ -143,6 +174,7 @@ export const reservasToClients = sqliteTable(
     compoundKey: primaryKey(vt.identifier),
   }),
 );
+
 export const reservasToClientsRelations = relations(
   reservasToClients,
   ({ one }) => ({
@@ -173,6 +205,8 @@ export const reservas = sqliteTable(
     client: text("client", { length: 255 }),
     nReserve: integer("nReserve"),
     mpPagadoOk: integer("mpPagadoOk", { mode: "boolean" }).default(false),
+    entidadId: text("entidadId")
+      .references(() => companies.id, { onDelete: "cascade" }),
   },
   (vt) => ({
     compoundKey: primaryKey(vt.identifier),
@@ -192,6 +226,10 @@ export const reservasRelations = relations(reservas, ({ one }) => ({
     fields: [reservas.client],
     references: [clients.email],
   }),
+  entidad: one(companies, {
+    fields: [reservas.entidadId],
+    references: [companies.id]
+  }),
 }));
 
 export const publicConfig = sqliteTable(
@@ -199,48 +237,40 @@ export const publicConfig = sqliteTable(
   {
     key: text("identifier").notNull(),
     value: text("value").notNull(),
+    entidadId: text("entidadId")
+      .references(() => companies.id, { onDelete: "cascade" }),
   },
   (vt) => ({
     compoundKey: primaryKey(vt.key),
   }),
 );
+
+export const publicConfigRelations = relations(publicConfig, ({ one }) => ({
+  entidad: one(companies, {
+    fields: [publicConfig.entidadId],
+    references: [companies.id]
+  }),
+}));
 
 export const privateConfig = sqliteTable(
   "privateConfig",
   {
     key: text("identifier").notNull(),
     value: text("value").notNull(),
+    entidadId: text("entidadId")
+      .references(() => companies.id, { onDelete: "cascade" }),
   },
   (vt) => ({
     compoundKey: primaryKey(vt.key),
   }),
 );
 
-export const lockers = sqliteTable(
-  "lockers",
-  {
-    id: text("identifier", { length: 255 }).notNull(),
-    nroSerieLocker: text("name", { length: 255 }).notNull(),
-    status: text("description", { length: 255 }),
-  },
-  (vt) => ({
-    compoundKey: primaryKey(vt.id),
+export const privateConfigRelations = relations(privateConfig, ({ one }) => ({
+  entidad: one(companies, {
+    fields: [privateConfig.entidadId],
+    references: [companies.id]
   }),
-);
-
-export const userData = sqliteTable(
-  "userdata",
-  {
-    identifier: text("identifier", { length: 255 }).notNull(),
-    name: text("name", { length: 255 }).notNull(),
-    last_name: text("last_name", { length: 255 }).notNull(),
-    email: text("email", { length: 255 }).notNull(),
-    tel: integer("tel").notNull(),
-  },
-  (vt) => ({
-    compoundKey: primaryKey(vt.identifier),
-  }),
-);
+}));
 
 export const feeData = sqliteTable(
   "feedata",
@@ -252,6 +282,8 @@ export const feeData = sqliteTable(
     localId: text("localId"),
     value: real("value"),
     discount: real("discount"),
+    entidadId: text("entidadId")
+      .references(() => companies.id, { onDelete: "cascade" }),
   },
   (vt) => ({
     compoundKey: primaryKey(vt.identifier),
@@ -268,6 +300,10 @@ export const feeDataRelations = relations(feeData, ({ one }) => ({
   coin: one(coinData, {
     fields: [feeData.coin],
     references: [coinData.identifier],
+  }),
+  entidad: one(companies, {
+    fields: [feeData.entidadId],
+    references: [companies.id]
   }),
 }));
 
@@ -294,11 +330,20 @@ export const cuponesData = sqliteTable(
     fecha_desde: text("fecha_desde"),
     fecha_hasta: text("fecha_hasta"),
     usos: real("usos"),
+    entidadId: text("entidadId")
+      .references(() => companies.id, { onDelete: "cascade" }),
   },
   (vt) => ({
     compoundKey: primaryKey(vt.identifier),
   }),
 );
+
+export const cuponesRelations = relations(cuponesData, ({ one }) => ({
+  entidad: one(companies, {
+    fields: [cuponesData.entidadId],
+    references: [companies.id]
+  }),
+}));
 
 export const pagos = sqliteTable(
   "pagos",
@@ -306,11 +351,20 @@ export const pagos = sqliteTable(
     identifier: integer("identifier").primaryKey({ autoIncrement: true }),
     mpMetaJson: text("mpMetaJson"),
     idTransactionsJson: text("idTransactionsJson"),
+    entidadId: text("entidadId")
+      .references(() => companies.id, { onDelete: "cascade" }),
   },
   (vt) => ({
     compoundKey: primaryKey(vt.identifier),
   }),
 );
+
+export const pagosRelations = relations(pagos, ({ one }) => ({
+  entidad: one(companies, {
+    fields: [pagos.entidadId],
+    references: [companies.id]
+  }),
+}));
 
 export const companies = sqliteTable(
   "company",
@@ -326,6 +380,16 @@ export const companies = sqliteTable(
 
 export const companiesRelations = relations(companies, ({ many }) => ({
   usuarioEntidades: many(usuarioEntidad),
+  clients: many(clients),
+  stores: many(stores),
+  transactions: many(transactions),
+  sizes: many(sizes),
+  publicConfig: many(publicConfig),
+  privateConfig: many(privateConfig),
+  reservas: many(reservas),
+  feeData: many(feeData),
+  cuponesData: many(cuponesData),
+  pagos: many(pagos),
 }));
 
 export const userRoles = sqliteTable(
