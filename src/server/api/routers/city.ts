@@ -25,7 +25,7 @@ export const cityRouter = createTRPCRouter({
       where: eq(cities.identifier, input),
     });
   }),
-  create: publicProcedure
+  create: protectedProcedure
     .input(
       z.object({
         name: z.string().min(0).max(1023),
@@ -47,7 +47,7 @@ export const cityRouter = createTRPCRouter({
 
       return { identifier };
     }),
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(
       z.object({
         cityId: z.string(),
@@ -60,7 +60,7 @@ export const cityRouter = createTRPCRouter({
 
       return channel;
     }),
-  change: publicProcedure
+  change: protectedProcedure
     .input(
       z.object({
         identifier: z.string(),
@@ -75,7 +75,7 @@ export const cityRouter = createTRPCRouter({
         .where(eq(cities.identifier, input.identifier));
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(
       z.object({
         id: z.string(),

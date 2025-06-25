@@ -1,6 +1,6 @@
 import { and, gte, lte, isNotNull, eq } from "drizzle-orm";
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { db, schema } from "~/server/db";
 import { env } from "~/env";
 import { lockerValidator } from "./lockers";
@@ -47,7 +47,7 @@ type SizeMap = {
 };
 
 export const reportsRouter = createTRPCRouter({
-  getOcupattion: publicProcedure
+  getOcupattion: protectedProcedure
     .input(
       z.object({
         startDate: z.string(),
@@ -80,7 +80,7 @@ export const reportsRouter = createTRPCRouter({
       return occupationData;
     }),
 
-  getTotalBoxesAmountPerSize: publicProcedure.query(async () => {
+  getTotalBoxesAmountPerSize: protectedProcedure.query(async () => {
     const locerResponse = await fetch(
       `${env.SERVER_URL}/api/locker/byTokenEmpresa/${env.TOKEN_EMPRESA}`,
     );
@@ -105,12 +105,12 @@ export const reportsRouter = createTRPCRouter({
     return boxCountsBySize;
   }),
 
-  getSizes: publicProcedure.query(async () => {
+  getSizes: protectedProcedure.query(async () => {
     const sizesData = await db.query.sizes.findMany();
     return sizesData;
   }),
 
-  getAverageReservationDuration: publicProcedure
+  getAverageReservationDuration: protectedProcedure
     .input(
       z.object({
         startDate: z.string(),

@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { createId } from "~/lib/utils";
 
@@ -10,15 +10,21 @@ import {
 import { cuponesData } from "~/server/db/schema";
 import { RouterOutputs } from "~/trpc/shared";
 import { db, schema } from "~/server/db";
+import { TRPCError } from "@trpc/server";
 
 export const cuponesRouter = createTRPCRouter({
-  get: publicProcedure.query(({ ctx }) => {
-    const result = ctx.db.query.cuponesData.findMany({
-      orderBy: (cuponesData, { desc }) => [desc(cuponesData.identifier)],
-    });
-    return result;
-  }),
-  create: publicProcedure
+  get: publicProcedure
+    .input(z.object({
+      entityId: z.string()
+    }))
+    .query(({ ctx, input }) => {
+      const result = ctx.db.query.cuponesData.findMany({
+        orderBy: (cuponesData, { desc }) => [desc(cuponesData.identifier)],
+        where: eq(schema.cuponesData.entidadId, input.entityId)
+      });
+      return result;
+    }),
+  create: protectedProcedure
     .input(
       z.object({
         codigo: z.string().min(0).max(1023),
@@ -31,10 +37,21 @@ export const cuponesRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // TODO: verificar permisos
-      const cupon = await db.query.cuponesData.findFirst({
-        where: eq(schema.cuponesData.codigo, input.codigo),
+      const ent = await db.query.companies.findFirst({
+        where: eq(schema.companies.id, ctx.orgId ?? "")
       });
+
+      if (!ent) {
+        throw new TRPCError({ code: 'NOT_FOUND' });
+      }
+
+      const cupon = await db.query.cuponesData.findFirst({
+        where: and(
+          eq(schema.cuponesData.codigo, input.codigo),
+          eq(schema.cuponesData.entidadId, ent.id)
+        ),
+      });
+
       if (!cupon) {
         const identifier = createId();
 
@@ -47,6 +64,7 @@ export const cuponesRouter = createTRPCRouter({
           fecha_hasta: input.fecha_hasta,
           cantidad_usos: input.cantidad_usos,
           usos: 0,
+          entidadId: ent.id
         });
 
         return { identifier };
@@ -54,15 +72,18 @@ export const cuponesRouter = createTRPCRouter({
         return null;
       }
     }),
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(
       z.object({
         cuponId: z.string(),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const channel = await db.query.cuponesData.findFirst({
-        where: eq(schema.cuponesData.identifier, input.cuponId),
+        where: and(
+          eq(schema.cuponesData.identifier, input.cuponId),
+          eq(schema.cuponesData.entidadId, ctx.orgId ?? ""),
+        ),
       });
 
       return channel;
@@ -71,11 +92,15 @@ export const cuponesRouter = createTRPCRouter({
     .input(
       z.object({
         codigo: z.string().min(0).max(1023),
+        entityId: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       const cupon = await db.query.cuponesData.findFirst({
-        where: eq(schema.cuponesData.codigo, input.codigo),
+        where: and(
+          eq(schema.cuponesData.codigo, input.codigo),
+          eq(schema.cuponesData.entidadId, input.entityId),
+        ),
       });
 
       if (cupon) {
@@ -98,7 +123,7 @@ export const cuponesRouter = createTRPCRouter({
 
       return null;
     }),
-  change: publicProcedure
+  change: protectedProcedure
     .input(
       z.object({
         identifier: z.string().min(0).max(1023),
@@ -111,8 +136,16 @@ export const cuponesRouter = createTRPCRouter({
         usos: z.number(),
       }),
     )
-    .mutation(({ ctx, input }) => {
-      return ctx.db
+    .mutation(async ({ ctx, input }) => {
+      const ent = await db.query.companies.findFirst({
+        where: eq(schema.companies.id, ctx.orgId ?? "")
+      });
+
+      if (!ent) {
+        throw new TRPCError({ code: 'NOT_FOUND' });
+      }
+
+      return await ctx.db
         .update(cuponesData)
         .set({
           codigo: input.codigo,
@@ -128,6 +161,7 @@ export const cuponesRouter = createTRPCRouter({
     .input(
       z.object({
         identifier: z.string().min(0).max(1023),
+        entityId: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -152,22 +186,40 @@ export const cuponesRouter = createTRPCRouter({
         .set({
           usos: sql`${cuponesData.usos} + 1`,
         })
-        .where(eq(schema.cuponesData.identifier, input.identifier));
+        .where(and(
+          eq(schema.cuponesData.identifier, input.identifier),
+          eq(schema.cuponesData.entidadId, input.entityId),
+        ));
+
       const response = await db.query.cuponesData.findFirst({
-        where: eq(schema.cuponesData.identifier, input.identifier),
+        where: and(
+          eq(schema.cuponesData.identifier, input.identifier),
+          eq(schema.cuponesData.entidadId, input.entityId),
+        ),
       });
       return response;
     }),
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(
       z.object({
         cuponId: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const ent = await db.query.companies.findFirst({
+        where: eq(schema.companies.id, ctx.orgId ?? "")
+      });
+
+      if (!ent) {
+        throw new TRPCError({ code: 'NOT_FOUND' });
+      }
+
       await db
         .delete(schema.cuponesData)
-        .where(eq(schema.cuponesData.identifier, input.cuponId));
+        .where(and(
+          eq(schema.cuponesData.identifier, input.cuponId),
+          eq(schema.cuponesData.entidadId, ent.id),
+        ));
     }),
 });
 

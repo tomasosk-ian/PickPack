@@ -24,7 +24,7 @@ import Success from "./success/success";
 import { Client } from "~/server/api/routers/clients";
 import Payment from "./payment/page";
 import { Coin } from "~/server/api/routers/coin";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import UserForm from "./user/userForm";
 import ButtonCustomComponent from "~/components/buttonCustom";
 import { Cupon } from "~/server/api/routers/cupones";
@@ -44,10 +44,10 @@ let paymentDisabledRef = false;
 export default function HomePage(props: {
   cities: City[];
   sizes: Size[];
-  stores: Store[];
   lang?: string;
 }) {
   const t = useTranslations('HomePage');
+  const { data: loadedStores = [] } = api.store.get.useQuery();
 
   const [paymentDisabled, setPaymentDisabled] = useState(false);
   const [city, setCity] = useState<City | null>(null);
@@ -81,6 +81,14 @@ export default function HomePage(props: {
     telefono: 0,
     dni: "",
   });
+
+  const { data: loadedSizes = [], refetch: refetchSizes } = api.size.get.useQuery({
+    store: store?.identifier ?? "",
+  });
+
+  useEffect(() => {
+    refetchSizes();
+  }, [store]);
 
   const { mutateAsync: createClient } = api.client.create.useMutation();
 
@@ -125,7 +133,7 @@ export default function HomePage(props: {
 
   const storesFinal = useMemo(() => {
     if (props.cities.length === 0) {
-      return props.stores;
+      return loadedStores;
     } else {
       return stores;
     }
@@ -348,7 +356,7 @@ export default function HomePage(props: {
                             coin={coin!}
                             setCoin={setCoin}
                             coins={coins!}
-                            sizes={props.sizes}
+                            sizes={loadedSizes}
                             cupon={cupon}
                             isExt={false}
                             t={t}
@@ -401,7 +409,7 @@ export default function HomePage(props: {
                           reserves={reserves}
                           setPagoOk={setPagoOk}
                           setReserves={setReserves}
-                          sizes={props.sizes}
+                          sizes={loadedSizes}
                           store={store!}
                           total={total}
                           cupon={cupon}
@@ -421,7 +429,7 @@ export default function HomePage(props: {
                           total={total}
                           coin={coin}
                           checkoutNumber={checkoutNumber!}
-                          sizes={props.sizes}
+                          sizes={loadedSizes}
                           startDate={startDate}
                           endDate={endDate}
                           t={t}
@@ -434,7 +442,7 @@ export default function HomePage(props: {
             )}
             {isExtension && (
               <div className="container absolute">
-                <Extension t={t} sizes={props.sizes} onBack={() => {
+                <Extension t={t} sizes={loadedSizes} onBack={() => {
                   setIsExtension(false);
                 }} />
               </div>

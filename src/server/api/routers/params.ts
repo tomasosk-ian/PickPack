@@ -7,7 +7,7 @@ import { env } from "~/env";
 import { z } from "zod";
 
 export const paramsRouter = createTRPCRouter({
-  getTimeOut: publicProcedure.query(async () => {
+  getTimeOut: protectedProcedure.query(async () => {
     const timeOutResult = await fetch(
       `${env.SERVER_URL}/api/token/GetTimeDeleter`,
     );

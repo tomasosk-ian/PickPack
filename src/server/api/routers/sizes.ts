@@ -10,7 +10,7 @@ import {
 } from "~/server/api/trpc";
 import { db, schema } from "~/server/db";
 
-async function sizesList(localId?: string): Promise<z.infer<typeof responseValidator>> {
+async function sizesList(localId: string): Promise<z.infer<typeof responseValidator>> {
   const sizeResponse = await fetch(`${env.SERVER_URL}/api/size`);
 
   // Handle the response from the external API
@@ -27,18 +27,18 @@ async function sizesList(localId?: string): Promise<z.infer<typeof responseValid
   await Promise.all(
     validatedData.map(async (v) => {
       let fee;
-      if (typeof localId === 'string') {
+      // if (typeof localId === 'string') {
         fee = await db.query.feeData.findFirst({
           where: and(
             eq(schema.feeData.size, v.id),
             eq(schema.feeData.localId, localId),
           ),
         });
-      } else {
-        fee = await db.query.feeData.findFirst({
-          where: eq(schema.feeData.size, v.id),
-        });
-      }
+      // } else {
+      //   fee = await db.query.feeData.findFirst({
+      //     where: eq(schema.feeData.size, v.id),
+      //   });
+      // }
 
       v.tarifa = fee?.identifier;
 
@@ -123,7 +123,7 @@ export const sizeRouter = createTRPCRouter({
   get: publicProcedure
     .input(
       z.object({
-        store: z.string().optional(),
+        store: z.string(),
       }),
     )
     .query(async ({ input }) => {
@@ -186,7 +186,7 @@ export const sizeRouter = createTRPCRouter({
       return Object.fromEntries(Object.entries(sizesLockersMap).filter(v => typeof v[1].size.tarifa === 'string'));
     }),
 
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(
       z.object({
         sizeId: z.number(),
@@ -218,7 +218,7 @@ export const sizeRouter = createTRPCRouter({
       return size;
     }),
 
-  changeImage: publicProcedure
+  changeImage: protectedProcedure
     .input(
       z.object({
         id: z.number(),

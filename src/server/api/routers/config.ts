@@ -7,14 +7,20 @@ import { TRPCError } from "@trpc/server";
 
 export const configRouter = createTRPCRouter({
   getKey: publicProcedure
-    .input(z.object({ key: z.custom<PublicConfigKeys>() }))
+    .input(z.object({
+      key: z.custom<PublicConfigKeys>(),
+      entityId: z.string(),
+    }))
     .query(async ({ input, ctx }) => {
       return await ctx.db.query.publicConfig.findFirst({
         where: eq(schema.publicConfig.key, input.key)
       });
     }),
   getPrivateKey: publicProcedure
-    .input(z.object({ key: z.custom<PrivateConfigKeys>() }))
+    .input(z.object({
+      key: z.custom<PrivateConfigKeys>(),
+      entityId: z.string()
+    }))
     .query(async ({ input, ctx }) => {
       if (!ctx.session || ctx.session.sessionClaims?.metadata.role !== 'admin') {
         throw new TRPCError({ code: 'UNAUTHORIZED', message: "no es admin" });
