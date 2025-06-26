@@ -15,7 +15,7 @@ import { TRPCError } from "@trpc/server";
 export const cuponesRouter = createTRPCRouter({
   get: publicProcedure
     .input(z.object({
-      entityId: z.string()
+      entityId: z.string().min(1)
     }))
     .query(({ ctx, input }) => {
       const result = ctx.db.query.cuponesData.findMany({
@@ -92,7 +92,7 @@ export const cuponesRouter = createTRPCRouter({
     .input(
       z.object({
         codigo: z.string().min(0).max(1023),
-        entityId: z.string(),
+        entityId: z.string().min(1),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -161,7 +161,7 @@ export const cuponesRouter = createTRPCRouter({
     .input(
       z.object({
         identifier: z.string().min(0).max(1023),
-        entityId: z.string(),
+        entityId: z.string().min(1),
       }),
     )
     .mutation(async ({ ctx, input }) => {

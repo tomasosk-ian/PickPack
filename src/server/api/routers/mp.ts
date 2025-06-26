@@ -32,7 +32,7 @@ export const mpRouter = createTRPCRouter({
       IdTransactions: z.array(z.number()),
       meta: z.custom<MpMeta>(),
       href: z.string(),
-      entityId: z.string(),
+      entityId: z.string().min(1),
     }))
     .mutation(async ({ input, ctx }) => {
       const ent = await db.query.companies.findFirst({
@@ -174,7 +174,7 @@ export const mpRouter = createTRPCRouter({
   areReservesPaid: publicProcedure
     .input(z.object({
       IdTransactions: z.array(z.number()),
-      entityId: z.string(),
+      entityId: z.string().min(1),
     }))
     .mutation(async ({ ctx, input }) => {
       const r = [...(new Set(input.IdTransactions))];

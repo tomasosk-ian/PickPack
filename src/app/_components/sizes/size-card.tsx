@@ -3,6 +3,7 @@ import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Coin } from "~/server/api/routers/coin";
 import { Size } from "~/server/api/routers/sizes";
+import { Store } from "~/server/api/routers/store";
 import { Translations } from "~/translations";
 import { api } from "~/trpc/react";
 
@@ -14,9 +15,10 @@ export default function SizeCard({ t, ...props }: {
   disabledMinus?: boolean;
   value: string;
   coin: Coin;
+  store: Store;
   t: Translations,
 }) {
-  const tarifa = api.fee.getById.useQuery({ id: props.size.tarifa! });
+  const tarifa = api.fee.getById.useQuery({ id: props.size.tarifa!, entityId: props.store.entidadId ?? "" });
   const [bgColor, setBgColor] = useState("#FFFFFF");
   const imgRef = useRef<HTMLImageElement>(null);
 

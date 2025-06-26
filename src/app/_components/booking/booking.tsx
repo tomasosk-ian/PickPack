@@ -38,7 +38,7 @@ export default function Booking({ t, ...props }: {
   t: Translations;
   onEdit?: () => void;
 }) {
-  const { data: fees } = api.fee.getByStore.useQuery({ id: props.store.identifier });
+  const { data: fees } = api.fee.getByStore.useQuery({ id: props.store.identifier, entityId: props.store.entidadId ?? "" });
 
   const [subTotal, setSubTotal] = useState<number>(0);
   const [groupedItems, setGroupedItems] = useState<GroupedItem[]>();

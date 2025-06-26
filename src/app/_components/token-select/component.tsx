@@ -26,9 +26,11 @@ export default function SelectToken({ t, ...props }: {
 }) {
   const [error, setError] = useState<string | null>(null);
   const [token, setToken] = useState<number>();
-  const { data: client, isLoading } = api.client.getByEmail.useQuery({
+  const { data: client, isLoading } = api.client.getByEmailAndToken.useQuery({
     email: props.email,
+    token: token ?? Number.MIN_SAFE_INTEGER
   });
+
   const handleTokenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     // Asegurar que el valor no tenga más de 6 cifras
@@ -62,7 +64,7 @@ export default function SelectToken({ t, ...props }: {
           onChange={handleTokenChange}
         />
         {error && <p className="text-red-500">{error}</p>}
-        <ButtonCustomComponent onClick={handleSubmit} text={`Enviar`} />
+        <ButtonCustomComponent onClick={handleSubmit} disabled={!client || isLoading} text={`Enviar`} />
       </div>
     </div>
   );

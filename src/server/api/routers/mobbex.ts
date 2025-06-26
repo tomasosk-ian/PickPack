@@ -24,7 +24,7 @@ export const mobbexRouter = createTRPCRouter({
         name: z.string(),
         identification: z.string(),
         cantidad: z.number(),
-        entityId: z.string(),
+        entityId: z.string().min(1),
       }),
     )
     .mutation(async ({ input, ctx }) => {

@@ -403,8 +403,6 @@ export default async function Home() {
               <HomePage
                 lang={locale}
                 cities={cities}
-                sizes={sizes}
-                stores={stores}
               />
             </div>
           </NextIntlClientProvider>

@@ -7,6 +7,7 @@ import { api } from "~/trpc/react";
 import { Reserve } from "~/server/api/routers/reserves";
 import { es } from "date-fns/locale";
 import { Translations } from "~/translations";
+import { Client } from "~/server/api/routers/clients";
 
 export default function DateComponent({ t, ...props }: {
   startDate: string | undefined;
@@ -20,14 +21,20 @@ export default function DateComponent({ t, ...props }: {
   setReserve: (reserve: Reserve) => void;
   setFailed: (failed: boolean) => void;
   t: Translations;
+  client: Client;
 }) {
   const [range, setRange] = useState<DateRange | undefined>();
   const [date, setDate] = useState<Date>();
 
-  const { data: plazoReserva } = api.config.getKey.useQuery({ key: "reserve_from_now" });
+  const { data: plazoReserva } = api.config.getKey.useQuery({
+    key: "reserve_from_now",
+    entityId: props.client.entidadId ?? ""
+  });
+  
   const { data: reserve, isLoading } = api.reserve.getByToken.useQuery({
     token: props.token,
     email: props.email,
+    entityId: props.client.entidadId ?? "",
   });
 
   useEffect(() => {

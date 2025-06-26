@@ -39,7 +39,7 @@ export default function SizeSelector({ t, ...props }: {
   const [values, setValues] = useState<Record<string, {
     cantidad: number,
   }>>({});
-  const { data: fees } = api.fee.getByStore.useQuery({ id: props.store.identifier });
+  const { data: fees } = api.fee.getByStore.useQuery({ id: props.store.identifier, entityId: props.store.entidadId ?? "" });
 
   const [coin, setCoin] = useState<Coin>();
   // const { mutateAsync: reservarBox } =
@@ -236,6 +236,7 @@ export default function SizeSelector({ t, ...props }: {
                     t={t}
                     coin={coin}
                     size={size}
+                    store={props.store}
                     disabledMinus={(values[size.id]?.cantidad ?? 0) === 0}
                     onClickMinus={() =>
                       setValues({

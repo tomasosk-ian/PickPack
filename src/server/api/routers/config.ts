@@ -9,7 +9,7 @@ export const configRouter = createTRPCRouter({
   getKey: publicProcedure
     .input(z.object({
       key: z.custom<PublicConfigKeys>(),
-      entityId: z.string(),
+      entityId: z.string().min(1),
     }))
     .query(async ({ input, ctx }) => {
       return await ctx.db.query.publicConfig.findFirst({
@@ -19,7 +19,7 @@ export const configRouter = createTRPCRouter({
   getPrivateKey: publicProcedure
     .input(z.object({
       key: z.custom<PrivateConfigKeys>(),
-      entityId: z.string()
+      entityId: z.string().min(1)
     }))
     .query(async ({ input, ctx }) => {
       if (!ctx.session || ctx.session.sessionClaims?.metadata.role !== 'admin') {

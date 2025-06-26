@@ -43,7 +43,6 @@ export const Icons = {
 let paymentDisabledRef = false;
 export default function HomePage(props: {
   cities: City[];
-  sizes: Size[];
   lang?: string;
 }) {
   const t = useTranslations('HomePage');
@@ -80,6 +79,7 @@ export default function HomePage(props: {
     prefijo: 0,
     telefono: 0,
     dni: "",
+    entidadId: "",
   });
 
   const { data: loadedSizes = [], refetch: refetchSizes } = api.size.get.useQuery({
@@ -176,18 +176,25 @@ export default function HomePage(props: {
       let failed = false;
       if (handleSubmit()) {
         const clientResponse = await createClient(
-          client,
+          {
+            ...client,
+            entityId: store?.entidadId ?? "",
+          }
         ).then(async (res: any) => {
           //creo una reserva para este cliente y seteo el numero de reserva
           const nreserve = await reserveToClient({
             clientId: res.id,
+            entityId: store?.entidadId ?? "",
           });
 
           setNReserve(nreserve!);
           for (const reserve of reserves) {
             reserve.client = client.email;
             const response = await reservarBox(
-              reserve!,
+              {
+                ...reserve!,
+                entityId: store?.entidadId ?? "",
+              }
             );
             const IdTransaction = parseInt(response);
             if (!isNaN(IdTransaction)) {
@@ -220,6 +227,7 @@ export default function HomePage(props: {
             cantidad: reserves.length,
             phone: `${client.prefijo ?? 0}${client.telefono ?? 0}`,
             identification: client.dni ?? "0",
+            entityId: store?.entidadId ?? "",
           });
           setCheckoutNumber(checkoutNumber);
         }
@@ -289,6 +297,7 @@ export default function HomePage(props: {
                         setEndDate={setEndDate}
                         days={days}
                         setDays={setDays}
+                        store={store}
                         t={t}
                         goBack={() => {
                           setStore(null);
@@ -334,6 +343,7 @@ export default function HomePage(props: {
                       <div className="flex flex-col items-center lg:flex-row lg:space-x-10">
                         <div className="w-full lg:w-auto">
                           <UserForm
+                            store={store}
                             client={client}
                             setClient={setClient}
                             errors={errors}

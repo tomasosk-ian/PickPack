@@ -10,23 +10,23 @@ import { TRPCError } from "@trpc/server";
 export const clientsRouter = createTRPCRouter({
   get: publicProcedure
     .input(z.object({
-      entidadId: z.string()
+      entityId: z.string().min(1)
     }))
     .query(async ({ ctx, input }) => {
       const result = ctx.db.query.clients.findMany({
         orderBy: (client, { asc }) => [asc(client.email)],
-        where: eq(schema.clients.entidadId, input.entidadId),
+        where: eq(schema.clients.entidadId, input.entityId),
       });
       return result;
     }),
   getGroupedByEmail: publicProcedure
     .input(z.object({
-      entidadId: z.string()
+      entityId: z.string().min(1)
     }))
     .query(async ({ ctx, input }) => {
       const clients = await ctx.db.query.clients.findMany({
         orderBy: (client, { asc }) => [asc(client.email)],
-        where: eq(schema.clients.entidadId, input.entidadId),
+        where: eq(schema.clients.entidadId, input.entityId),
       });
 
       // Group by email using JavaScript
@@ -51,7 +51,7 @@ export const clientsRouter = createTRPCRouter({
         prefijo: z.number().nullable().optional(),
         telefono: z.number().nullable().optional(),
         dni: z.string().min(0).max(1023).optional().nullable(),
-        entidadId: z.string().min(0).max(1023),
+        entityId: z.string().min(1),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -59,7 +59,7 @@ export const clientsRouter = createTRPCRouter({
       const client = await ctx.db.query.clients.findFirst({
         where: and(
           eq(schema.clients.email, input.email!),
-          eq(schema.clients.entidadId, input.entidadId),
+          eq(schema.clients.entidadId, input.entityId),
         ),
       });
 
@@ -94,18 +94,25 @@ export const clientsRouter = createTRPCRouter({
         return client;
       }
     }),
-  getByEmail: publicProcedure
+  getByEmailAndToken: publicProcedure
     .input(
       z.object({
         email: z.string(),
-        entidadId: z.string()
+        token: z.number()
       }),
     )
     .query(async ({ input }) => {
       const client = await db.query.clients.findFirst({
-        where: and(
-          eq(schema.clients.email, input.email),
-          eq(schema.clients.entidadId, input.entidadId),
+        where: (table, { exists, eq }) => and(
+          eq(table.email, input.email),
+          exists(
+            db.select()
+              .from(schema.reservas)
+              .where(and(
+                eq(schema.reservas.client, table.identifier),
+                eq(schema.reservas.Token1, input.token),
+              ))
+          )
         ),
       });
 

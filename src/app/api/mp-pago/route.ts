@@ -151,7 +151,9 @@ export async function POST(request: NextRequest) {
         image?: string | null;
         cantidad?: number | null;
         tarifa?: string | null;
-      }[] | string = await api.size.get.query({});
+      }[] | string = await api.size.get.query({
+        store: null,
+      });
 
       const nReserve = meta.n_reserve;
       const isExt = meta.is_ext;
@@ -182,6 +184,7 @@ export async function POST(request: NextRequest) {
           let response = await api.lockerReserve.confirmBox.mutate({
             idToken: reserve.IdTransaction,
             nReserve: nReserve,
+            entityId: meta.entidad_id,
           });
 
           if (response) {
@@ -191,7 +194,7 @@ export async function POST(request: NextRequest) {
                 sizes.find((x) => x.id === reserve.IdSize)?.nombre ?? "",
               ]);
 
-              const client = await getClientByEmail(reserve.client!);
+              const client = await getClientByEmail(reserve.client!, meta.entidad_id);
               const identifier = createId();
         
               await db.insert(schema.reservas).values({
@@ -230,7 +233,7 @@ export async function POST(request: NextRequest) {
             });
 
             if (cupon_id) {
-              await api.cupones.useCupon.mutate({ identifier: cupon_id });
+              await api.cupones.useCupon.mutate({ identifier: cupon_id, entityId: meta.entidad_id });
             }
           }
 

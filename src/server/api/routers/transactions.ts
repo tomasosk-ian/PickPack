@@ -21,7 +21,7 @@ export const transactionRouter = createTRPCRouter({
         client: z.string().nullable().optional(),
         nReserve: z.number().nullable().optional(),
         amount: z.number().nullable().optional(),
-        entityId: z.string(),
+        entityId: z.string().min(1),
       }),
     )
     .mutation(async ({ ctx, input }) => {

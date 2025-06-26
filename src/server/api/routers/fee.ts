@@ -16,7 +16,7 @@ export const feeRouter = createTRPCRouter({
   getByStore: publicProcedure
     .input(z.object({
       id: z.string(),
-      entityId: z.string(),
+      entityId: z.string().min(1),
     }))
     .query(async ({ ctx, input }) => {
       const ent = await db.query.companies.findFirst({
@@ -44,7 +44,7 @@ export const feeRouter = createTRPCRouter({
     .input(
       z.object({
         id: z.string(),
-        entityId: z.string(),
+        entityId: z.string().min(1),
       }),
     )
     .query(async ({ input }) => {

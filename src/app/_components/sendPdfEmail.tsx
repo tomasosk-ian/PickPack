@@ -6,7 +6,6 @@ export default function Component() {
   const targetRef = useRef<HTMLDivElement>(null); // Asegúrate de especificar el tipo de referencia
   const targetRef2 = useRef<HTMLDivElement>(null); // Asegúrate de especificar el tipo de referencia
   const { toPDF } = usePDF();
-  const { mutateAsync: sendEmail } = api.email.sendEmail.useMutation();
 
   async function generateBase64PDF() {
     try {

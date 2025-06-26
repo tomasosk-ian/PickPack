@@ -36,7 +36,7 @@ export const lockerReserveRouter = createTRPCRouter({
         client: z.string().nullable().optional(),
         identifier: z.string().nullable().optional(),
         nReserve: z.number().optional(),
-        entityId: z.string(),
+        entityId: z.string().min(1),
       }),
     )
     .mutation(async ({ input }) => {
@@ -100,7 +100,7 @@ export const lockerReserveRouter = createTRPCRouter({
       z.object({
         idToken: z.number(),
         nReserve: z.number(),
-        entityId: z.string(),
+        entityId: z.string().min(1),
         // isExt: z.boolean(),
         // newEndDate: z.string().optional(),
       }),

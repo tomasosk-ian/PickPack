@@ -10,7 +10,7 @@ import {
 } from "~/server/api/trpc";
 import { db, schema } from "~/server/db";
 
-async function sizesList(localId: string): Promise<z.infer<typeof responseValidator>> {
+async function sizesList(localId: string | null): Promise<z.infer<typeof responseValidator>> {
   const sizeResponse = await fetch(`${env.SERVER_URL}/api/size`);
 
   // Handle the response from the external API
@@ -27,18 +27,18 @@ async function sizesList(localId: string): Promise<z.infer<typeof responseValida
   await Promise.all(
     validatedData.map(async (v) => {
       let fee;
-      // if (typeof localId === 'string') {
+      if (typeof localId === 'string') {
         fee = await db.query.feeData.findFirst({
           where: and(
             eq(schema.feeData.size, v.id),
             eq(schema.feeData.localId, localId),
           ),
         });
-      // } else {
-      //   fee = await db.query.feeData.findFirst({
-      //     where: eq(schema.feeData.size, v.id),
-      //   });
-      // }
+      } else {
+        fee = await db.query.feeData.findFirst({
+          where: eq(schema.feeData.size, v.id),
+        });
+      }
 
       v.tarifa = fee?.identifier;
 
@@ -123,7 +123,7 @@ export const sizeRouter = createTRPCRouter({
   get: publicProcedure
     .input(
       z.object({
-        store: z.string(),
+        store: z.string().nullable(),
       }),
     )
     .query(async ({ input }) => {
