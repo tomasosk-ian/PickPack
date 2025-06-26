@@ -28,7 +28,7 @@ export const env = createEnv({
     SENDGRID_API_KEY: z.string(),
     MAIL_SENDER: z.string(),
 
-    TOKEN_EMPRESA: z.string(),
+    TOKEN_EMPRESA: z.string().optional(),
     CLERK_SECRET_KEY: z.string(),
   },
 

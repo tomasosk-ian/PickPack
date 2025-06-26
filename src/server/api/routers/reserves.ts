@@ -17,6 +17,7 @@ import { Input } from "~/components/ui/input";
 import { getClientByEmail } from "./lockerReserveRouter";
 import { TRPCError } from "@trpc/server";
 import { trpcTienePermisoCtx } from "~/lib/roles";
+import { PrivateConfigKeys } from "~/lib/config";
 
 export type Reserve = {
   identifier: string | null;
@@ -42,7 +43,7 @@ export const reserveRouter = createTRPCRouter({
   get: protectedProcedure.query(async ({ ctx }) => {
     await trpcTienePermisoCtx(ctx, "panel:reservas");
 
-    checkBoxAssigned();
+    checkBoxAssigned(ctx.orgId ?? "");
     const result = await ctx.db.query.reservas.findMany({
       with: { clients: true },
       where: (reservas) =>
@@ -64,47 +65,9 @@ export const reserveRouter = createTRPCRouter({
     return groupedByNReserve;
   }),
 
-  // getActive: publicProcedure.query(async ({ ctx }) => {
-  //   checkBoxAssigned();
-
-  //   const result = await db.query.reservas.findMany({
-  //     where: (reservas) =>
-  //       and(isNotNull(reservas.nReserve), isNotNull(reservas.Token1)),
-  //     with: { clients: true },
-  //   });
-
-  //   const now = new Date();
-  //   const startOfDay = new Date(
-  //     now.getFullYear(),
-  //     now.getMonth(),
-  //     now.getDate(),
-  //   );
-  //   const endOfDay = new Date(
-  //     now.getFullYear(),
-  //     now.getMonth(),
-  //     now.getDate() + 1,
-  //   );
-
-  //   const actives = result.filter(
-  //     (x) =>
-  //       new Date(x.FechaFin!).getTime() >= startOfDay.getTime() &&
-  //       new Date(x.FechaFin!).getTime() < endOfDay.getTime(),
-  //   );
-
-  //   const groupedByNReserve = actives.reduce((acc: any, reserva) => {
-  //     const nReserve = reserva.nReserve!;
-  //     if (!acc[nReserve]) {
-  //       acc[nReserve] = [];
-  //     }
-  //     acc[nReserve].push(reserva);
-  //     return acc;
-  //   }, {});
-
-  //   return groupedByNReserve;
-  // }),
   getActive: protectedProcedure.query(async ({ ctx }) => {
     await trpcTienePermisoCtx(ctx, "panel:reservas");
-    checkBoxAssigned();
+    checkBoxAssigned(ctx.orgId ?? "");
 
     const result = await db.query.reservas.findMany({
       where: (reservas) =>
@@ -150,7 +113,7 @@ export const reserveRouter = createTRPCRouter({
 
       // Evita llamadas innecesarias si `nReserve` es inválido
       if (!input.nReserve) throw new Error("Invalid nReserve");
-      checkBoxAssigned();
+      checkBoxAssigned(ctx.orgId ?? "");
 
       // Consulta optimizada
       const reserve = await db.query.reservas.findMany({
@@ -176,7 +139,7 @@ export const reserveRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input }) => {
-      checkBoxAssigned();
+      checkBoxAssigned(input.entityId);
 
       // Consulta optimizada
       const reserve = await db.query.reservas.findMany({
@@ -203,7 +166,7 @@ export const reserveRouter = createTRPCRouter({
       }),
     )
     .query(async ({ input }) => {
-      checkBoxAssigned();
+      checkBoxAssigned(input.entityId);
 
       const reserve = await db.query.reservas.findFirst({
         where: (reservas) =>
@@ -228,7 +191,7 @@ export const reserveRouter = createTRPCRouter({
     .query(async ({ input, ctx }) => {
       await trpcTienePermisoCtx(ctx, "panel:clientes");
       
-      checkBoxAssigned();
+      checkBoxAssigned(ctx.orgId ?? "");
       const result = await ctx.db.query.reservas.findMany({
         with: { clients: true },
         where: (reservas) =>
@@ -392,57 +355,28 @@ export const reserveRouter = createTRPCRouter({
 
 export type Reserves = RouterOutputs["reserve"]["getBynReserve"][number];
 
-// export async function checkBoxAssigned() {
-//   const locerResponse = await fetch(
-//     `${env.SERVER_URL}/api/locker/byTokenEmpresa/${env.TOKEN_EMPRESA}`,
-//   );
-//   const reservedBoxData = await locerResponse.json();
-//   if (!locerResponse.ok) {
-//     const errorResponse = reservedBoxData;
-//     return { error: errorResponse.message || "Unknown error" };
-//   }
-//   // Validate the response data against the lockerValidator schema
-//   const validatedData = z.array(lockerValidator).safeParse(reservedBoxData);
-//   if (!validatedData.success) {
-//     throw null; // Handle the case where the data is invalid
-//   }
-//   // Process lockers and tokens
-//   validatedData.data.map(async (locker) => {
-//     locker.tokens?.map(async (token) => {
-//       if (token.idBox != null) {
-//         const idFisico = locker.boxes.find(
-//           (box) => box.id == token.idBox,
-//         )?.idFisico;
-//         // Validar el token antes de usarlo en la base de datos
-//         const token1Value = parseInt(token.token1 ?? "0");
-//         if (!Number.isFinite(token1Value)) {
-//           console.error(`Valor de token1 no válido: ${token.token1}`);
-//           return; // No continuar si el valor no es válido
-//         }
-//         // Solo ejecutar la consulta si el token es válido
-//         db.update(schema.reservas)
-//           .set({ IdFisico: idFisico, IdBox: token.idBox })
-//           .where(
-//             and(
-//               eq(schema.reservas.Token1!, token1Value),
-//               isNull(schema.reservas.IdBox),
-//               isNull(schema.reservas.IdFisico),
-//             ),
-//           );
-//       }
-//     });
-//   });
-//   //fin check
-// }
 
 /**
  * Función para verificar y asignar lockers a partir de un API y procesar las actualizaciones correspondientes en la base de datos.
  */
-export async function checkBoxAssigned() {
+export async function checkBoxAssigned(entityId: string) {
+  const tk: PrivateConfigKeys = 'token_empresa';
+  const tkValue = await db.query.privateConfig.findFirst({
+    where: and(
+      eq(schema.privateConfig.key, tk),
+      eq(schema.privateConfig.entidadId, entityId)
+    )
+  });
+
+  if (!tkValue) {
+    throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: "Sin token de empresa" });
+  }
+  
   // Realiza una solicitud a la API para obtener los datos de lockers asignados por empresa.
   const locerResponse = await fetch(
     `${env.SERVER_URL}/api/locker/byTokenEmpresa/${env.TOKEN_EMPRESA}`,
   );
+
   const reservedBoxData = await locerResponse.json();
 
   // Verifica si la respuesta de la API fue exitosa

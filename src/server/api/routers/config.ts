@@ -13,24 +13,24 @@ export const configRouter = createTRPCRouter({
       entityId: z.string().min(1),
     }))
     .query(async ({ input, ctx }) => {
-      return await ctx.db.query.publicConfig.findFirst({
+      return (await ctx.db.query.publicConfig.findFirst({
         where: and(
           eq(schema.publicConfig.key, input.key),
           eq(schema.publicConfig.entidadId, input.entityId),
         )
-      });
+      })) ?? null;
     }),
   getKeyProt: protectedProcedure
     .input(z.object({
       key: z.custom<PublicConfigKeys>(),
     }))
     .query(async ({ input, ctx }) => {
-      return await ctx.db.query.publicConfig.findFirst({
+      return (await ctx.db.query.publicConfig.findFirst({
         where: and(
           eq(schema.publicConfig.key, input.key),
           eq(schema.publicConfig.entidadId, ctx.orgId ?? ""),
         )
-      });
+      })) ?? null;
     }),
   getPrivateKey: protectedProcedure
     .input(z.object({
@@ -38,12 +38,12 @@ export const configRouter = createTRPCRouter({
     }))
     .query(async ({ input, ctx }) => {
       await trpcTienePermisoCtx(ctx, "panel:params");
-      return await ctx.db.query.privateConfig.findFirst({
+      return (await ctx.db.query.privateConfig.findFirst({
         where: and(
           eq(schema.privateConfig.key, input.key),
           eq(schema.privateConfig.entidadId, ctx.orgId ?? ""),
         )
-      });
+      })) ?? null;
     }),
   setPublicKeyAdmin: protectedProcedure
     .input(z.object({

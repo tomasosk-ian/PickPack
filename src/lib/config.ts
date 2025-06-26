@@ -18,6 +18,7 @@ export const PrivateConfigClaves = {
   "mercadopago_webhook_url": "URL de Webhook de Mercado Pago",
   "mobbex_api_key": "Clave API de Mobbex",
   "mobbex_access_token": "Token de acceso de Mobbex",
+  "token_empresa": "Token Empresa"
 }
 
 export type PrivateConfigKeys = keyof typeof PrivateConfigClaves;

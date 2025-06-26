@@ -4,6 +4,8 @@ import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/
 import { db, schema } from "~/server/db";
 import { env } from "~/env";
 import { lockerValidator } from "./lockers";
+import { TRPCError } from "@trpc/server";
+import { PrivateConfigKeys } from "~/lib/config";
 
 export type DailyOccupation = {
   day: string; // Format "day/month"
@@ -80,9 +82,25 @@ export const reportsRouter = createTRPCRouter({
       return occupationData;
     }),
 
-  getTotalBoxesAmountPerSize: protectedProcedure.query(async () => {
+  getTotalBoxesAmountPerSize: protectedProcedure.query(async ({ ctx }) => {
+    if (!ctx.orgId) {
+      throw new TRPCError({ code: 'BAD_REQUEST', message: "Sin entidad" });
+    }
+
+    const tk: PrivateConfigKeys = 'token_empresa';
+    const tkValue = await db.query.privateConfig.findFirst({
+      where: and(
+        eq(schema.privateConfig.key, tk),
+        eq(schema.privateConfig.entidadId, ctx.orgId)
+      )
+    });
+
+    if (!tkValue) {
+      throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: "Sin token de empresa" });
+    }
+
     const locerResponse = await fetch(
-      `${env.SERVER_URL}/api/locker/byTokenEmpresa/${env.TOKEN_EMPRESA}`,
+      `${env.SERVER_URL}/api/locker/byTokenEmpresa/${tkValue.value}`,
     );
 
     const reservedBoxData = await locerResponse.json();

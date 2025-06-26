@@ -1,8 +1,10 @@
 import { db, schema } from "~/server/db";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
-import { eq, isNull } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { trpcTienePermisoCtx } from "~/lib/roles";
 import { PERMISO_ADMIN } from "~/lib/permisos";
+import { PrivateConfigKeys } from "~/lib/config";
+import { env } from "~/env";
 
 // esfuerzo dudoso de no repetir ejecuciones de migraciones
 let lastMigration = 0;
@@ -32,6 +34,23 @@ export const testRouter = createTRPCRouter({
             .returning();
 
           defaultEntidad = res!;
+        }
+
+        const tk: PrivateConfigKeys = 'token_empresa';
+        const tkEmp = await db.query.privateConfig.findFirst({
+          where: and(
+            eq(schema.privateConfig.entidadId, defaultEntidad.id),
+            eq(schema.privateConfig.key, tk)
+          )
+        });
+
+        if (!tkEmp && env.TOKEN_EMPRESA) {
+          await db.insert(schema.privateConfig)
+            .values({
+              key: tk,
+              value: env.TOKEN_EMPRESA,
+              entidadId: defaultEntidad.id
+            });
         }
 
         await db.update(schema.clients)

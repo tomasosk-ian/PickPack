@@ -101,7 +101,7 @@ export default function DateComponent({
   }
 
   const textoReservas = useMemo(() => {
-    if (typeof plazoReserva === "undefined") {
+    if (!plazoReserva) {
       return "";
     } else if (plazoReserva.value.trim().toLowerCase() === "true") {
       return t("dateReservesTextNow");

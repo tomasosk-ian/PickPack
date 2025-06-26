@@ -262,13 +262,80 @@ function FormPlazoReserva({ invalidate }: { invalidate: () => void }) {
   </div>
 }
 
+function FormTokenEmpresa({ invalidate }: { invalidate: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState("");
+  const { mutateAsync: setPrivateKey, isLoading: isLoadingPublic } = api.config.setPrivateKeyAdmin.useMutation();
+  const { data: claveOriginal, refetch: refetch1 } = api.config.getPrivateKey.useQuery({ key: 'token_empresa' });
+  const isLoading = isLoadingPublic;
+
+  useEffect(() => {
+    if (open) {
+      setValue(claveOriginal?.value ?? "");
+    }
+  }, [open]);
+
+  useEffect(() => {
+    setValue(claveOriginal?.value ?? "");
+  }, [claveOriginal]);
+
+  async function handle() {
+    await setPrivateKey({ key: 'token_empresa', value: value.trim() });
+    await refetch1();
+    invalidate();
+    setOpen(false);
+  }
+
+  return <div className="m-2">
+    <Button onClick={() => setOpen(true)} className="rounded-full gap-1 px-4 py-5 text-base text-[#3E3E3E] bg-[#d0d0d0] hover:bg-[#ffffff]">
+      {isLoading ? (
+        <Loader2Icon className="h-4 mr-1 animate-spin" size={20} />
+      ) : (
+        <PlusCircleIcon className="h-5 mr-1 stroke-1" />
+      )}
+      Configurar token de empresa
+    </Button>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>Configurar token de empresa</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="flex flex-col">
+            <Label htmlFor="valor" className="mb-2">Token</Label>
+            <Input
+              value={value}
+              onChange={(v) => setValue(v.target.value)}
+            />
+          </div>
+        </div>
+        <DialogFooter className="sm:justify-center">
+          <Button
+            disabled={isLoading}
+            onClick={handle}
+            className="flex rounded-full w-fit justify-self-center text-[#3E3E3E] bg-[#d0d0d0] hover:bg-[#ffffff]"
+          >
+            {isLoading ? (
+              <Loader2Icon className="h-4 mr-1 animate-spin" size={20} />
+            ) : (
+              <PlusCircleIcon className="h-4 mr-1 stroke-1" />
+            )}
+            Guardar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  </div>
+}
+
 export default function LockerOcupationPage() {
   // Consulta de datos con fechas seleccionadas
   const { data: timeOut } = api.params.getTimeOut.useQuery();
   const { data: privateConfigs, refetch: refetchPrivate } = api.config.listPrivateAdmin.useQuery();
   const { data: publicConfigs, refetch: refetchPublic } = api.config.listPublicAdmin.useQuery();
-  const { mutateAsync: deletePrivateKey } = api.config.deletePrivateKeyAdmin.useMutation();
-  const { mutateAsync: deletePublicKey } = api.config.deletePublicKeyAdmin.useMutation();
+  // const { mutateAsync: deletePrivateKey } = api.config.deletePrivateKeyAdmin.useMutation();
+  // const { mutateAsync: deletePublicKey } = api.config.deletePublicKeyAdmin.useMutation();
 
   async function invalidate() {
     await refetchPrivate();
@@ -277,13 +344,16 @@ export default function LockerOcupationPage() {
 
   return (
     <LayoutContainer>
-      <div className="w-full flex justify-between">
-        <h2 className="text-2xl font-semibold mb-3"></h2>
+      <div className="w-full flex flex-col justify-between">
+        <h2 className="text-2xl font-semibold mb-3">Parámetros</h2>
         <div className="flex flex-row">
           {/* <InsertClavePublica invalidate={invalidate} />
           <InsertClavePrivada invalidate={invalidate} /> */}
           <FormMetodoPago invalidate={invalidate} />
           <FormPlazoReserva invalidate={invalidate} />
+        </div>
+        <div className="flex flex-row">
+          <FormTokenEmpresa invalidate={invalidate} />
         </div>
       </div>
       <section className="space-y-2">
