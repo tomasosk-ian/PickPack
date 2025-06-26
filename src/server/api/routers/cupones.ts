@@ -13,14 +13,11 @@ import { db, schema } from "~/server/db";
 import { TRPCError } from "@trpc/server";
 
 export const cuponesRouter = createTRPCRouter({
-  get: publicProcedure
-    .input(z.object({
-      entityId: z.string().min(1)
-    }))
+  get: protectedProcedure
     .query(({ ctx, input }) => {
       const result = ctx.db.query.cuponesData.findMany({
         orderBy: (cuponesData, { desc }) => [desc(cuponesData.identifier)],
-        where: eq(schema.cuponesData.entidadId, input.entityId)
+        where: eq(schema.cuponesData.entidadId, ctx.orgId ?? "")
       });
       return result;
     }),

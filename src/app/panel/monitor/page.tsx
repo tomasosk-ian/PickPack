@@ -47,7 +47,7 @@ async function fetchData() {
     api.locker.get.query(),
     api.store.get.query(),
     api.reserve.getLastReserveByBox.query(),
-    api.size.get.query({}),
+    api.size.getProt.query({ store: null }),
   ]);
 
   return {

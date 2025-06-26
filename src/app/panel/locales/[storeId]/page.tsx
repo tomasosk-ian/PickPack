@@ -9,10 +9,11 @@ export default async function Channel(props: { params: { storeId: string } }) {
   const cities = await api.city.get.query();
   const lockersResponse = await api.locker.get.query();
   const coin = await api.coin.get.query();
-  const sizes = await api.size.get.query({
-    store: store?.identifier,
+  const sizes = await api.size.getProt.query({
+    store: store?.identifier ?? null,
   });
-  const fees = await api.fee.getByStore.query({
+
+  const fees = await api.fee.getByStoreProt.query({
     id: props.params.storeId
   });
 

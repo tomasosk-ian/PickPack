@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { env } from "~/env";
 import { createId } from "~/lib/utils";
@@ -10,7 +10,7 @@ import {
 } from "~/server/api/trpc";
 import { db, schema } from "~/server/db";
 
-async function sizesList(localId: string | null): Promise<z.infer<typeof responseValidator>> {
+async function sizesList(localId: string | null, entityId: string | null): Promise<z.infer<typeof responseValidator>> {
   const sizeResponse = await fetch(`${env.SERVER_URL}/api/size`);
 
   // Handle the response from the external API
@@ -22,6 +22,9 @@ async function sizesList(localId: string | null): Promise<z.infer<typeof respons
   }
 
   const reservedBoxData = await sizeResponse.json();
+  const allLocales = await db.query.stores.findMany({
+    where: eq(schema.stores.entidadId, entityId ?? "")
+  });
 
   const validatedData = responseValidator.parse(reservedBoxData);
   await Promise.all(
@@ -34,6 +37,15 @@ async function sizesList(localId: string | null): Promise<z.infer<typeof respons
             eq(schema.feeData.localId, localId),
           ),
         });
+      } else if (typeof entityId === 'string') {
+        if (allLocales.length > 0) {
+          fee = await db.query.feeData.findFirst({
+            where: and(
+              eq(schema.feeData.size, v.id),
+              inArray(schema.feeData.localId, allLocales.map(v => v.identifier)),
+            ),
+          });
+        }
       } else {
         fee = await db.query.feeData.findFirst({
           where: eq(schema.feeData.size, v.id),
@@ -127,7 +139,16 @@ export const sizeRouter = createTRPCRouter({
       }),
     )
     .query(async ({ input }) => {
-      return sizesList(input.store);
+      return sizesList(input.store, null);
+    }),
+  getProt: protectedProcedure
+    .input(
+      z.object({
+        store: z.string().nullable(),
+      }),
+    )
+    .query(async ({ input, ctx }) => {
+      return sizesList(input.store, ctx.orgId ?? "");
     }),
   getAvailability: publicProcedure
     .input(

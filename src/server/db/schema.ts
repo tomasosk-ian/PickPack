@@ -241,7 +241,7 @@ export const publicConfig = sqliteTable(
       .references(() => companies.id, { onDelete: "cascade" }),
   },
   (vt) => ({
-    compoundKey: primaryKey(vt.key),
+    compoundKey: primaryKey({ columns: [vt.key, vt.entidadId] }),
   }),
 );
 
@@ -261,7 +261,7 @@ export const privateConfig = sqliteTable(
       .references(() => companies.id, { onDelete: "cascade" }),
   },
   (vt) => ({
-    compoundKey: primaryKey(vt.key),
+    compoundKey: primaryKey({ columns: [vt.key, vt.entidadId] }),
   }),
 );
 

@@ -12,34 +12,68 @@ import type { RouterOutputs } from "~/trpc/shared";
 import { db, schema } from "~/server/db";
 import { TRPCError } from "@trpc/server";
 
+async function getFeesByStore(id: string, entityId: string) {
+  const ent = await db.query.companies.findFirst({
+    where: eq(schema.companies.id, entityId)
+  });
+
+  if (!ent) {
+    throw new TRPCError({ code: 'NOT_FOUND' });
+  }
+
+  const result = db.query.feeData.findMany({
+    where: and(
+      eq(schema.feeData.localId, id),
+      eq(schema.feeData.entidadId, ent.id),
+    ),
+    with: {
+      store: true,
+    },
+    orderBy: (feeData, { desc }) => [desc(feeData.identifier)],
+  });
+
+  return result;
+}
+
+async function getFeeById(id: string, entityId: string) {
+  const ent = await db.query.companies.findFirst({
+    where: eq(schema.companies.id, entityId)
+  });
+
+  if (!ent) {
+    throw new TRPCError({ code: 'NOT_FOUND' });
+  }
+
+  const channel = await db.query.feeData.findFirst({
+    where: and(
+      eq(schema.feeData.identifier, id),
+      eq(schema.feeData.entidadId, ent.id),
+    ),
+    with: {
+      store: true,
+    },
+  });
+
+  return channel;
+}
+
 export const feeRouter = createTRPCRouter({
   getByStore: publicProcedure
     .input(z.object({
       id: z.string(),
       entityId: z.string().min(1),
     }))
-    .query(async ({ ctx, input }) => {
-      const ent = await db.query.companies.findFirst({
-        where: eq(schema.companies.id, input.entityId)
-      });
-
-      if (!ent) {
-        throw new TRPCError({ code: 'NOT_FOUND' });
-      }
-
-      const result = ctx.db.query.feeData.findMany({
-        where: and(
-          eq(schema.feeData.localId, input.id),
-          eq(schema.feeData.entidadId, ent.id),
-        ),
-        with: {
-          store: true,
-        },
-        orderBy: (feeData, { desc }) => [desc(feeData.identifier)],
-      });
-
-      return result;
+    .query(async ({ input }) => {
+      return await getFeesByStore(input.id, input.entityId);
     }),
+  getByStoreProt: protectedProcedure
+    .input(z.object({
+      id: z.string(),
+    }))
+    .query(async ({ input, ctx }) => {
+      return await getFeesByStore(input.id, ctx.orgId ?? "");
+    }),
+
   getById: publicProcedure
     .input(
       z.object({
@@ -48,25 +82,17 @@ export const feeRouter = createTRPCRouter({
       }),
     )
     .query(async ({ input }) => {
-      const ent = await db.query.companies.findFirst({
-        where: eq(schema.companies.id, input.entityId)
-      });
+      return await getFeeById(input.id, input.entityId)
+    }),
 
-      if (!ent) {
-        throw new TRPCError({ code: 'NOT_FOUND' });
-      }
-
-      const channel = await db.query.feeData.findFirst({
-        where: and(
-          eq(schema.feeData.identifier, input.id),
-          eq(schema.feeData.entidadId, ent.id),
-        ),
-        with: {
-          store: true,
-        },
-      });
-
-      return channel;
+  getByIdProt: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
+    .query(async ({ input, ctx }) => {
+      return await getFeeById(input.id, ctx.orgId ?? "")
     }),
 
   create: protectedProcedure

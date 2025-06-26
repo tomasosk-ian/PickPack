@@ -19,14 +19,11 @@ export const clientsRouter = createTRPCRouter({
       });
       return result;
     }),
-  getGroupedByEmail: publicProcedure
-    .input(z.object({
-      entityId: z.string().min(1)
-    }))
-    .query(async ({ ctx, input }) => {
+  getGroupedByEmail: protectedProcedure
+    .query(async ({ ctx }) => {
       const clients = await ctx.db.query.clients.findMany({
         orderBy: (client, { asc }) => [asc(client.email)],
-        where: eq(schema.clients.entidadId, input.entityId),
+        where: eq(schema.clients.entidadId, ctx.orgId ?? ""),
       });
 
       // Group by email using JavaScript

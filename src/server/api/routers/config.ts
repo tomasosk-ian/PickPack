@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import { db, schema } from "~/server/db";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { PrivateConfigKeys, type PublicConfigKeys } from "~/lib/config";
 import { TRPCError } from "@trpc/server";
 
@@ -13,13 +13,27 @@ export const configRouter = createTRPCRouter({
     }))
     .query(async ({ input, ctx }) => {
       return await ctx.db.query.publicConfig.findFirst({
-        where: eq(schema.publicConfig.key, input.key)
+        where: and(
+          eq(schema.publicConfig.key, input.key),
+          eq(schema.publicConfig.entidadId, input.entityId),
+        )
       });
     }),
-  getPrivateKey: publicProcedure
+  getKeyProt: protectedProcedure
+    .input(z.object({
+      key: z.custom<PublicConfigKeys>(),
+    }))
+    .query(async ({ input, ctx }) => {
+      return await ctx.db.query.publicConfig.findFirst({
+        where: and(
+          eq(schema.publicConfig.key, input.key),
+          eq(schema.publicConfig.entidadId, ctx.orgId ?? ""),
+        )
+      });
+    }),
+  getPrivateKey: protectedProcedure
     .input(z.object({
       key: z.custom<PrivateConfigKeys>(),
-      entityId: z.string().min(1)
     }))
     .query(async ({ input, ctx }) => {
       if (!ctx.session || ctx.session.sessionClaims?.metadata.role !== 'admin') {
@@ -27,7 +41,10 @@ export const configRouter = createTRPCRouter({
       }
 
       return await ctx.db.query.privateConfig.findFirst({
-        where: eq(schema.privateConfig.key, input.key)
+        where: and(
+          eq(schema.privateConfig.key, input.key),
+          eq(schema.privateConfig.entidadId, ctx.orgId ?? ""),
+        )
       });
     }),
   setPublicKeyAdmin: protectedProcedure
@@ -40,11 +57,17 @@ export const configRouter = createTRPCRouter({
         throw new TRPCError({ code: 'UNAUTHORIZED', message: "no es admin" });
       }
 
+      if (!ctx.orgId) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: "Sin entidad" });
+      }
 
       await db.insert(schema.publicConfig)
-        .values(input)
+        .values({
+          ...input,
+          entidadId: ctx.orgId ?? "",
+        })
         .onConflictDoUpdate({
-          target: schema.publicConfig.key,
+          target: [schema.publicConfig.key, schema.publicConfig.entidadId],
           set: {
             value: input.value
           }
@@ -63,10 +86,17 @@ export const configRouter = createTRPCRouter({
         throw new TRPCError({ code: 'UNAUTHORIZED', message: "no es admin" });
       }
 
+      if (!ctx.orgId) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: "Sin entidad" });
+      }
+
       await db.insert(schema.privateConfig)
-        .values(input)
+        .values({
+          ...input,
+          entidadId: ctx.orgId ?? "",
+        })
         .onConflictDoUpdate({
-          target: schema.privateConfig.key,
+          target: [schema.privateConfig.key, schema.privateConfig.entidadId],
           set: {
             value: input.value
           }
@@ -81,7 +111,9 @@ export const configRouter = createTRPCRouter({
         throw new TRPCError({ code: 'UNAUTHORIZED', message: "no es admin" });
       }
 
-      return await ctx.db.query.publicConfig.findMany({});
+      return await ctx.db.query.publicConfig.findMany({
+        where: eq(schema.publicConfig.entidadId, ctx.orgId ?? "")
+      });
     }),
   listPrivateAdmin: protectedProcedure
     .query(async ({ ctx }) => {
@@ -89,7 +121,9 @@ export const configRouter = createTRPCRouter({
         throw new TRPCError({ code: 'UNAUTHORIZED', message: "no es admin" });
       }
 
-      return await ctx.db.query.privateConfig.findMany({});
+      return await ctx.db.query.privateConfig.findMany({
+        where: eq(schema.privateConfig.entidadId, ctx.orgId ?? "")
+      });
     }),
   deletePublicKeyAdmin: protectedProcedure
     .input(z.object({
@@ -101,7 +135,10 @@ export const configRouter = createTRPCRouter({
       }
 
       await db.delete(schema.publicConfig)
-        .where(eq(schema.publicConfig.key, input.key));
+        .where(and(
+          eq(schema.publicConfig.key, input.key),
+          eq(schema.publicConfig.entidadId, ctx.orgId ?? ""),
+        ));
 
       return "ok";
     }),
@@ -115,7 +152,10 @@ export const configRouter = createTRPCRouter({
       }
 
       await db.delete(schema.privateConfig)
-        .where(eq(schema.privateConfig.key, input.key));
+        .where(and(
+          eq(schema.privateConfig.key, input.key),
+          eq(schema.privateConfig.entidadId, ctx.orgId ?? ""),
+        ));
 
       return "ok";
     }),
