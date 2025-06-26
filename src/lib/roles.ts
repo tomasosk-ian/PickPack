@@ -249,8 +249,8 @@ export async function trpcTienePermisoAll(
 // si permiso es un array, retorna ok si contiene AL MENOS UN PERMISO DE permiso
 export async function trpcTienePermisoCtx(
   ctx: {
+    orgId: string | undefined | null;
     session: {
-      orgId: string | undefined | null;
       user?: {
         id?: string;
       };
@@ -267,7 +267,7 @@ export async function trpcTienePermisoCtx(
 
   return await trpcTienePermiso(
     ctx.session.user.id,
-    ctx.session.orgId,
+    ctx.orgId,
     permiso,
   );
 }
@@ -275,8 +275,8 @@ export async function trpcTienePermisoCtx(
 // ok si tiene ALGUNO de los permisos listados
 export async function trpcTienePermisoCtxAny(
   ctx: {
+    orgId: string | undefined | null;
     session: {
-      orgId: string | undefined | null;
       user?: {
         id?: string;
       };
@@ -293,7 +293,7 @@ export async function trpcTienePermisoCtxAny(
 
   return await trpcTienePermisoAny(
     ctx.session.user.id,
-    ctx.session.orgId,
+    ctx.orgId,
     permisoAny,
   );
 }
@@ -301,8 +301,8 @@ export async function trpcTienePermisoCtxAny(
 // ok si tiene TODOS los permisos listados
 export async function trpcTienePermisoCtxAll(
   ctx: {
+    orgId: string | undefined | null;
     session: {
-      orgId: string | undefined | null;
       user?: {
         id?: string;
       };
@@ -319,7 +319,7 @@ export async function trpcTienePermisoCtxAll(
 
   return await trpcTienePermisoAll(
     ctx.session.user.id,
-    ctx.session.orgId,
+    ctx.orgId,
     permisoAll,
   );
 }

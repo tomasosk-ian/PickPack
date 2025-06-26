@@ -1,9 +1,10 @@
 import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { PERMISO_ADMIN } from "~/lib/permisos";
-import { trpcTienePermisoCtx, trpcTienePermisoCtxAny } from "~/lib/roles";
+import { serverUserPerms, trpcTienePermisoCtx, trpcTienePermisoCtxAny } from "~/lib/roles";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { db, schema } from "~/server/db";
+import { TRPCError } from "@trpc/server";
 
 const preparedCompanyById = db.query.companies
   .findFirst({
@@ -26,14 +27,21 @@ const preparedCompanyGet = db.query.companies
 
 export const companiesRouter = createTRPCRouter({
   list: protectedProcedure.query(async ({ ctx }) => {
-    const { perms, roles } = await trpcTienePermisoCtx(ctx, PERMISO_ADMIN);
+    const { perms, roles } = await serverUserPerms(
+      ctx.session.user.id,
+      ctx.orgId ?? null,
+    );
+
+    if (!perms.has(PERMISO_ADMIN)) {
+      throw new TRPCError({ code: "UNAUTHORIZED" });
+    }
 
     let res = await db.query.companies.findMany();
 
     if (!perms.has(PERMISO_ADMIN)) {
       res = res.filter(
         (v) =>
-          v.id === ctx.session.orgId ||
+          v.id === ctx.orgId ||
           typeof roles.find((rol) => rol.companyId === v.id) !== "undefined",
       );
     }

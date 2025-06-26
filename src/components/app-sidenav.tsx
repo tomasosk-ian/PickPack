@@ -1,3 +1,4 @@
+"use client"
 import Sidenav, { SidenavItem, SidenavSeparator } from "./sidenav";
 import {
   AlignStartVerticalIcon,
@@ -7,38 +8,41 @@ import {
   GroupIcon,
   KeyRound,
   ReceiptIcon,
-  Settings2Icon,
   UserIcon,
   LayoutDashboardIcon,
   PercentCircleIcon,
   AreaChartIcon,
   BanIcon,
 } from "lucide-react";
-import { Badge } from "./ui/badge";
 import { About } from "./about-dialog";
-import { Button } from "./ui/button";
+import { usePerms } from "./perms-provider";
+import SelectEntidad from "./selector-entidad";
 
-export default function AppSidenav(props: { isAdmin: boolean }) {
+export default function AppSidenav() {
+  const { isAdmin } = usePerms();
+
   return (
     <div className="text-xs">
       <Sidenav>
-        {props.isAdmin && <SidenavSeparator>Mantenimiento</SidenavSeparator>}
-        {props.isAdmin && (
+        <SelectEntidad />
+
+        {isAdmin && <SidenavSeparator>Mantenimiento</SidenavSeparator>}
+        {isAdmin && (
           <SidenavItem icon={<UserIcon />} href="/panel/usuarios">
             Usuarios
           </SidenavItem>
         )}
-        {props.isAdmin && (
+        {isAdmin && (
           <SidenavItem icon={<BanIcon />} disabled={true}>
             Roles
           </SidenavItem>
         )}
-        {props.isAdmin && (
+        {isAdmin && (
           <SidenavItem icon={<KeyRound />} disabled={true}>
             Permisos
           </SidenavItem>
         )}
-        {props.isAdmin && (
+        {isAdmin && (
           <SidenavItem
             icon={<AreaChartIcon />}
             disabled={false}
@@ -47,7 +51,7 @@ export default function AppSidenav(props: { isAdmin: boolean }) {
             Reportes
           </SidenavItem>
         )}{" "}
-        {props.isAdmin && (
+        {isAdmin && (
           <SidenavItem
             icon={<CogIcon />}
             disabled={false}

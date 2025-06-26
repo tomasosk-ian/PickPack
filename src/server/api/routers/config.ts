@@ -36,10 +36,6 @@ export const configRouter = createTRPCRouter({
       key: z.custom<PrivateConfigKeys>(),
     }))
     .query(async ({ input, ctx }) => {
-      if (!ctx.session || ctx.session.sessionClaims?.metadata.role !== 'admin') {
-        throw new TRPCError({ code: 'UNAUTHORIZED', message: "no es admin" });
-      }
-
       return await ctx.db.query.privateConfig.findFirst({
         where: and(
           eq(schema.privateConfig.key, input.key),
@@ -53,10 +49,6 @@ export const configRouter = createTRPCRouter({
       value: z.string()
     }))
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.session || ctx.session.sessionClaims?.metadata.role !== 'admin') {
-        throw new TRPCError({ code: 'UNAUTHORIZED', message: "no es admin" });
-      }
-
       if (!ctx.orgId) {
         throw new TRPCError({ code: 'BAD_REQUEST', message: "Sin entidad" });
       }
@@ -82,10 +74,6 @@ export const configRouter = createTRPCRouter({
       value: z.string()
     }))
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.session || ctx.session.sessionClaims?.metadata.role !== 'admin') {
-        throw new TRPCError({ code: 'UNAUTHORIZED', message: "no es admin" });
-      }
-
       if (!ctx.orgId) {
         throw new TRPCError({ code: 'BAD_REQUEST', message: "Sin entidad" });
       }
@@ -107,20 +95,12 @@ export const configRouter = createTRPCRouter({
     }),
   listPublicAdmin: protectedProcedure
     .query(async ({ ctx }) => {
-      if (!ctx.session || ctx.session.sessionClaims?.metadata.role !== 'admin') {
-        throw new TRPCError({ code: 'UNAUTHORIZED', message: "no es admin" });
-      }
-
       return await ctx.db.query.publicConfig.findMany({
         where: eq(schema.publicConfig.entidadId, ctx.orgId ?? "")
       });
     }),
   listPrivateAdmin: protectedProcedure
     .query(async ({ ctx }) => {
-      if (!ctx.session || ctx.session.sessionClaims?.metadata.role !== 'admin') {
-        throw new TRPCError({ code: 'UNAUTHORIZED', message: "no es admin" });
-      }
-
       return await ctx.db.query.privateConfig.findMany({
         where: eq(schema.privateConfig.entidadId, ctx.orgId ?? "")
       });
@@ -130,10 +110,6 @@ export const configRouter = createTRPCRouter({
       key: z.custom<PublicConfigKeys>(),
     }))
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.session || ctx.session.sessionClaims?.metadata.role !== 'admin') {
-        throw new TRPCError({ code: 'UNAUTHORIZED', message: "no es admin" });
-      }
-
       await db.delete(schema.publicConfig)
         .where(and(
           eq(schema.publicConfig.key, input.key),
@@ -147,10 +123,6 @@ export const configRouter = createTRPCRouter({
       key: z.custom<PrivateConfigKeys>(),
     }))
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.session || ctx.session.sessionClaims?.metadata.role !== 'admin') {
-        throw new TRPCError({ code: 'UNAUTHORIZED', message: "no es admin" });
-      }
-
       await db.delete(schema.privateConfig)
         .where(and(
           eq(schema.privateConfig.key, input.key),
