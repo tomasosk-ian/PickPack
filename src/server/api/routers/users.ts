@@ -9,6 +9,32 @@ import { clerkClient } from "@clerk/nextjs/server";
 import { RouterOutputs } from "~/trpc/shared";
 
 export const userRouter = createTRPCRouter({
+  getById: protectedProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+      }),
+    )
+    .query(async ({ input }) => {
+      const user = await clerkClient.users.getUser(input.userId);
+      const usuarioEntidades = await db.query.usuarioEntidad.findFirst({
+        where: eq(schema.usuarioEntidad.userId, user.id)
+      });
+
+      const usuarioRoles = await db.query.userRoles.findMany({
+        where: eq(schema.userRoles.userId, user.id),
+        with: {
+          rol: true
+        }
+      });
+
+      return {
+        ...user,
+        fullName: ((user.firstName ?? "") + " " + (user.lastName ?? "")).trim(),
+        usuarioEntidades: usuarioEntidades ? [usuarioEntidades] : [],
+        usuarioRoles,
+      };
+    }),
   self: protectedProcedure.query(async ({ ctx }) => {
     if (
       typeof ctx.session?.user?.id !== "string" ||
@@ -327,14 +353,15 @@ export const userRouter = createTRPCRouter({
     .input(
       z.object({
         id: z.string(),
-        name: z.string(),
+        firstName: z.string(),
+        lastName: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       await trpcTienePermisoCtx(ctx, PERMISO_ADMIN);
       await clerkClient.users.updateUser(input.id, {
-        firstName: input.name,
-        lastName: "",
+        firstName: input.firstName,
+        lastName: input.lastName,
       });
 
       return "ok";
@@ -353,7 +380,7 @@ export const userRouter = createTRPCRouter({
             permisos: true,
             company: true,
           },
-          where: isNotNull(schema.roles.companyId),
+          // where: isNotNull(schema.roles.companyId),
         });
       } else {
         const entidadesAsignadas = await db.query.usuarioEntidad.findMany({

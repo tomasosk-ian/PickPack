@@ -2,7 +2,7 @@
 import { useOrganization, useOrganizationList } from "@clerk/nextjs";
 import { Organization, auth, clerkClient } from "@clerk/nextjs/server";
 import { CheckIcon, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import LayoutContainer from "~/components/layout-container";
 import { Title } from "~/components/title";
 import {
@@ -27,56 +27,62 @@ import {
 import { api } from "~/trpc/react";
 
 export default function UserPage(props: { params: { userId: string } }) {
-  const { organization, membership } = useOrganization();
-  const { data: user, isLoading: loadUser } = api.clerk.getById.useQuery({
+  const { data: roles = [] } = api.user.listRoles.useQuery({
+    asignables: false
+  });
+
+  const { data: user, isLoading: loadUser } = api.user.getById.useQuery({
     userId: props.params.userId,
   });
-  const { data: organizations } = api.clerk.getOrganizations.useQuery();
+
   useEffect(() => {
     if (user) {
-      setRole(user.publicMetadata.role as string);
+      setRole(user?.usuarioRoles.at(0)?.roleId ?? "-");
       setFirstName(user.firstName ?? "");
       setLastName(user.lastName ?? "");
-
       // setOrganization(orgId ?? "");
     }
   }, [user]);
-  useEffect(() => {
-    setOrganizationId(organization?.id!);
-  }, [organization, membership]);
-  const { mutateAsync: editUser, isLoading } = api.clerk.editUser.useMutation();
-  const { mutateAsync: removeUserFromOrganization } =
-    api.clerk.removeUserFromOrganization.useMutation();
-  const [role, setRole] = useState<string>(user?.publicMetadata.role as string);
+
+  const { mutateAsync: editUser, isLoading: isLoadingUser } = api.user.edit.useMutation();
+  const { mutateAsync: editRole, isLoading: isLoadingRole } = api.user.assignRoles.useMutation();
+
+  const isLoading = useMemo(() => isLoadingRole || isLoadingUser, [isLoadingRole, isLoadingUser]);
+
+  const [role, setRole] = useState<string>(user?.usuarioRoles.at(0)?.roleId ?? "-");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [organizationId, setOrganizationId] = useState("ddd");
-  const { isLoaded, setActive, userMemberships } = useOrganizationList({
-    userMemberships: {
-      infinite: true,
-    },
-  });
-  const roles = ["user", "admin", "unautorized"];
 
-  function test() {
-    organization?.removeMember(props.params.userId);
-  }
+  async function handleChange() {
+    const rol = user?.usuarioRoles.at(0)?.roleId ?? "-";
+    if (rol !== role) {
+      if (role === "-") {
+        await editRole({
+          rolesId: [],
+          userId: props.params.userId,
+        })
+      } else {
+        await editRole({
+          rolesId: [role],
+          userId: props.params.userId,
+        });
+      }
+    }
 
-  function handleChange() {
     editUser({
-      userId: props.params.userId,
-      role,
+      id: props.params.userId,
       firstName,
       lastName,
-      organizationId,
     });
   }
+
   if (!user) {
     if (loadUser) {
       return <Loader2 className="mr-2 animate-spin" />;
     }
     return <Title>No se encontró el usuario.</Title>;
   }
+
   return (
     <>
       {!loadUser && (
@@ -125,17 +131,20 @@ export default function UserPage(props: { params: { userId: string } }) {
                             onValueChange={(value: string) => {
                               setRole(value);
                             }}
+                            value={role}
                           >
                             <SelectTrigger className="w-[180px]">
                               <SelectValue placeholder={role} />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectGroup>
-                                <SelectLabel>Roles</SelectLabel>
+                                <SelectItem key={"rol--"} value={"-"}>
+                                  Sin rol
+                                </SelectItem>
                                 {roles.map((e) => {
                                   return (
-                                    <SelectItem key={e} value={e}>
-                                      {e}
+                                    <SelectItem key={"rol-" + e.id} value={e.id}>
+                                      {`${e.company?.name ? `(${e.company.name}) ` : ""}${e.name}`}
                                     </SelectItem>
                                   );
                                 })}
@@ -160,7 +169,7 @@ export default function UserPage(props: { params: { userId: string } }) {
             </AccordionContent>
           </AccordionItem> */}
             </Accordion>
-            <Accordion type="single" collapsible className="w-full">
+            {/* <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="item-2">
                 <AccordionTrigger>
                   <h2 className="text-md">Organización</h2>
@@ -215,7 +224,7 @@ export default function UserPage(props: { params: { userId: string } }) {
                   </Card>
                 </AccordionContent>
               </AccordionItem>
-            </Accordion>
+            </Accordion> */}
           </section>
         </LayoutContainer>
       )}
