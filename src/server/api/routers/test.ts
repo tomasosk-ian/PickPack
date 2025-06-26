@@ -2,9 +2,18 @@ import { db, schema } from "~/server/db";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { eq, isNull } from "drizzle-orm";
 
+// esfuerzo dudoso de no repetir ejecuciones de migraciones
+let lastMigration = 0;
+
 export const testRouter = createTRPCRouter({
   migrateToEntities: protectedProcedure
     .mutation(async () => {
+      if (Date.now() - lastMigration > 60000 * 60) {
+        lastMigration = Date.now();
+      } else {
+        return;
+      }
+
       await db.transaction(async (db) => {
         let defaultEntidad = await db.query.companies.findFirst({
           where: eq(schema.companies.id, "default")
@@ -51,6 +60,8 @@ export const testRouter = createTRPCRouter({
         await db.update(schema.pagos)
           .set({ entidadId: "default" })
           .where(isNull(schema.pagos.entidadId));
+
+        lastMigration = Date.now();
       });
     })
 });

@@ -3,9 +3,12 @@ import { List, ListTile } from "~/components/list";
 import { Title } from "~/components/title";
 import { Badge } from "~/components/ui/badge";
 import { Roles } from "~/lib/globals";
+import { api } from "~/trpc/server";
 
 export default async function Home() {
   const response = await clerkClient.users.getUserList();
+  await api.test.migrateToEntities.mutate();
+
   return (
     <>
       <Title>Usuarios</Title>
