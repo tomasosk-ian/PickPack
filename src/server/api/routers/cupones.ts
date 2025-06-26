@@ -11,10 +11,12 @@ import { cuponesData } from "~/server/db/schema";
 import { RouterOutputs } from "~/trpc/shared";
 import { db, schema } from "~/server/db";
 import { TRPCError } from "@trpc/server";
+import { trpcTienePermisoCtx } from "~/lib/roles";
 
 export const cuponesRouter = createTRPCRouter({
   get: protectedProcedure
-    .query(({ ctx, input }) => {
+    .query(async ({ ctx, input }) => {
+      await trpcTienePermisoCtx(ctx, "panel:cupones");
       const result = ctx.db.query.cuponesData.findMany({
         orderBy: (cuponesData, { desc }) => [desc(cuponesData.identifier)],
         where: eq(schema.cuponesData.entidadId, ctx.orgId ?? "")
@@ -34,6 +36,7 @@ export const cuponesRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await trpcTienePermisoCtx(ctx, "panel:cupones");
       const ent = await db.query.companies.findFirst({
         where: eq(schema.companies.id, ctx.orgId ?? "")
       });
@@ -134,6 +137,7 @@ export const cuponesRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await trpcTienePermisoCtx(ctx, "panel:cupones");
       const ent = await db.query.companies.findFirst({
         where: eq(schema.companies.id, ctx.orgId ?? "")
       });
@@ -203,6 +207,7 @@ export const cuponesRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await trpcTienePermisoCtx(ctx, "panel:cupones");
       const ent = await db.query.companies.findFirst({
         where: eq(schema.companies.id, ctx.orgId ?? "")
       });

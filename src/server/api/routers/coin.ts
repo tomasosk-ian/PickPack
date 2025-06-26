@@ -10,6 +10,8 @@ import {
 import { cities, coinData, feeData } from "~/server/db/schema";
 import { RouterOutputs } from "~/trpc/shared";
 import { db, schema } from "~/server/db";
+import { trpcTienePermisoCtx } from "~/lib/roles";
+import { PERMISO_ADMIN } from "~/lib/permisos";
 
 export const coinRouter = createTRPCRouter({
   get: publicProcedure.query(({ ctx }) => {
@@ -31,7 +33,7 @@ export const coinRouter = createTRPCRouter({
 
       return channel;
     }),
-  create: publicProcedure
+  create: protectedProcedure
     .input(
       z.object({
         description: z.string().min(0).max(1023).nullable(),
@@ -39,8 +41,7 @@ export const coinRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // TODO: verificar permisos
-
+      await trpcTienePermisoCtx(ctx, PERMISO_ADMIN);
       const identifier = createId();
 
       await db.insert(schema.coinData).values({
@@ -51,7 +52,7 @@ export const coinRouter = createTRPCRouter({
 
       return { identifier };
     }),
-  change: publicProcedure
+  change: protectedProcedure
     .input(
       z.object({
         identifier: z.string(),
@@ -59,20 +60,22 @@ export const coinRouter = createTRPCRouter({
         value: z.number(),
       }),
     )
-    .mutation(({ ctx, input }) => {
+    .mutation(async ({ ctx, input }) => {
+      await trpcTienePermisoCtx(ctx, PERMISO_ADMIN);
       return ctx.db
         .update(coinData)
         .set({ description: input.description, value: input.value })
         .where(eq(coinData.identifier, input.identifier));
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(
       z.object({
         id: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await trpcTienePermisoCtx(ctx, PERMISO_ADMIN);
       await db
         .delete(schema.coinData)
         .where(eq(schema.coinData.identifier, input.id));

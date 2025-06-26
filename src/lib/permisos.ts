@@ -1,9 +1,23 @@
 export const Permisos = {
   "*": "ADMINISTRADOR",
+  "panel:params": "(Panel) Parámetros",
+  "panel:monitor": "(Panel) Monitor",
+  "panel:locales": "(Panel) Locales",
+  "panel:sizes": "(Panel) Tamaños",
+  "panel:clientes": "(Panel) Clientes",
+  "panel:reservas": "(Panel) Reservas",
+  "panel:cupones": "(Panel) Cupones",
 };
 
 export const PermisosVisibles: { [key in PermisosValue]: boolean } = {
   "*": false,
+  "panel:clientes": true,
+  "panel:cupones": true,
+  "panel:locales": true,
+  "panel:monitor": true,
+  "panel:params": true,
+  "panel:reservas": true,
+  "panel:sizes": true,
 };
 
 // si el usuario tiene este permiso quiere decir que cualquier llamada a

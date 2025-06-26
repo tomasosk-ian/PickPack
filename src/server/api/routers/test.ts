@@ -1,13 +1,17 @@
 import { db, schema } from "~/server/db";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { eq, isNull } from "drizzle-orm";
+import { trpcTienePermisoCtx } from "~/lib/roles";
+import { PERMISO_ADMIN } from "~/lib/permisos";
 
 // esfuerzo dudoso de no repetir ejecuciones de migraciones
 let lastMigration = 0;
 
 export const testRouter = createTRPCRouter({
   migrateToEntities: protectedProcedure
-    .mutation(async () => {
+    .mutation(async ({ ctx }) => {
+      await trpcTienePermisoCtx(ctx, PERMISO_ADMIN);
+      
       if (Date.now() - lastMigration > 60000 * 60) {
         lastMigration = Date.now();
       } else {

@@ -6,6 +6,7 @@ import type { RouterOutputs } from "~/trpc/shared";
 import { db, schema } from "~/server/db";
 import { clients } from "~/server/db/schema";
 import { TRPCError } from "@trpc/server";
+import { trpcTienePermisoCtx } from "~/lib/roles";
 
 export const clientsRouter = createTRPCRouter({
   get: publicProcedure
@@ -21,6 +22,7 @@ export const clientsRouter = createTRPCRouter({
     }),
   getGroupedByEmail: protectedProcedure
     .query(async ({ ctx }) => {
+      await trpcTienePermisoCtx(ctx, "panel:clientes");
       const clients = await ctx.db.query.clients.findMany({
         orderBy: (client, { asc }) => [asc(client.email)],
         where: eq(schema.clients.entidadId, ctx.orgId ?? ""),
@@ -82,7 +84,8 @@ export const clientsRouter = createTRPCRouter({
         identifier: z.number().optional(),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      await trpcTienePermisoCtx(ctx, "panel:clientes");
       if (input.identifier) {
         const client = await db.query.clients.findFirst({
           where: eq(schema.clients.identifier, input.identifier),
@@ -127,7 +130,8 @@ export const clientsRouter = createTRPCRouter({
         dni: z.string().min(0).max(1023).optional().nullable(),
       }),
     )
-    .mutation(({ ctx, input }) => {
+    .mutation(async ({ ctx, input }) => {
+      await trpcTienePermisoCtx(ctx, "panel:clientes");
       if (!ctx.orgId) {
         throw new TRPCError({ code: 'BAD_REQUEST', message: "Sin entidad" });
       }
@@ -147,6 +151,7 @@ export const clientsRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await trpcTienePermisoCtx(ctx, "panel:clientes");
       if (!ctx.orgId) {
         throw new TRPCError({ code: 'BAD_REQUEST', message: "Sin entidad" });
       }

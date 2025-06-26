@@ -8,8 +8,16 @@ import {
 import BoxContent from "~/components/box-content";
 import { Zap, ZapOff } from "lucide-react";
 import { Locker } from "~/server/api/routers/lockers";
+import { tienePermiso } from "~/lib/permisos";
+import { redirect } from "next/navigation";
 
 export default async function Home() {
+  const { perms } = await api.user.self.query();
+  if (!tienePermiso(perms, "panel:monitor")) {
+    redirect("/accessdenied");
+    return <></>;
+  }
+
   const { lockers, stores, reservas, sizes } = await fetchData();
 
   return (

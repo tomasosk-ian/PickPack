@@ -11,6 +11,7 @@ import { feeData, sizes } from "~/server/db/schema";
 import type { RouterOutputs } from "~/trpc/shared";
 import { db, schema } from "~/server/db";
 import { TRPCError } from "@trpc/server";
+import { trpcTienePermisoCtx } from "~/lib/roles";
 
 async function getFeesByStore(id: string, entityId: string) {
   const ent = await db.query.companies.findFirst({
@@ -71,6 +72,7 @@ export const feeRouter = createTRPCRouter({
       id: z.string(),
     }))
     .query(async ({ input, ctx }) => {
+      await trpcTienePermisoCtx(ctx, "panel:locales");
       return await getFeesByStore(input.id, ctx.orgId ?? "");
     }),
 
@@ -107,6 +109,8 @@ export const feeRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await trpcTienePermisoCtx(ctx, "panel:locales");
+
       if (!ctx.orgId) {
         throw new TRPCError({ code: 'BAD_REQUEST', message: "Sin entidad" });
       }

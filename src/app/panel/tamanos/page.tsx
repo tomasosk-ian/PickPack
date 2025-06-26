@@ -17,10 +17,17 @@ import { Label } from "~/components/ui/label";
 import { Size } from "~/server/api/routers/sizes";
 import { Title } from "~/components/title";
 import { List, ListTile } from "~/components/list";
+import { tienePermiso } from "~/lib/permisos";
+import { redirect } from "next/navigation";
 
 export default async function Home() {
+  const { perms } = await api.user.self.query();
+  if (!tienePermiso(perms, "panel:sizes")) {
+    redirect("/accessdenied");
+    return <></>;
+  }
+
   // const sizes = await api.size.get.query();
-  const session = await getServerAuthSession();
   const sizes = await api.size.getProt.query({
     store: null,
   });

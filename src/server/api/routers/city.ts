@@ -10,6 +10,8 @@ import {
 import { cities } from "~/server/db/schema";
 import { RouterOutputs } from "~/trpc/shared";
 import { db, schema } from "~/server/db";
+import { trpcTienePermisoCtx } from "~/lib/roles";
+import { PERMISO_ADMIN } from "~/lib/permisos";
 
 export const cityRouter = createTRPCRouter({
   get: publicProcedure.query(({ ctx }) => {
@@ -34,7 +36,7 @@ export const cityRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // TODO: verificar permisos
+      await trpcTienePermisoCtx(ctx, PERMISO_ADMIN);
 
       const identifier = createId();
 
@@ -53,7 +55,8 @@ export const cityRouter = createTRPCRouter({
         cityId: z.string(),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      await trpcTienePermisoCtx(ctx, PERMISO_ADMIN);
       const channel = await db.query.cities.findFirst({
         where: eq(schema.cities.identifier, input.cityId),
       });
@@ -68,7 +71,8 @@ export const cityRouter = createTRPCRouter({
         image: z.string().nullable(),
       }),
     )
-    .mutation(({ ctx, input }) => {
+    .mutation(async ({ ctx, input }) => {
+      await trpcTienePermisoCtx(ctx, PERMISO_ADMIN);
       return ctx.db
         .update(cities)
         .set({ name: input.name, image: input.image })
@@ -82,6 +86,7 @@ export const cityRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await trpcTienePermisoCtx(ctx, PERMISO_ADMIN);
       await db
         .delete(schema.cities)
         .where(eq(schema.cities.identifier, input.id));

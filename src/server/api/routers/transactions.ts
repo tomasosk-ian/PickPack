@@ -6,6 +6,7 @@ import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/
 import { RouterOutputs } from "~/trpc/shared";
 import { db, schema } from "~/server/db";
 import { transactions } from "~/server/db/schema";
+import { trpcTienePermisoCtx } from "~/lib/roles";
 
 export const transactionRouter = createTRPCRouter({
   get: protectedProcedure.query(({ ctx }) => {
@@ -47,6 +48,8 @@ export const transactionRouter = createTRPCRouter({
       }),
     )
     .query(async ({ input, ctx }) => {
+      await trpcTienePermisoCtx(ctx, "panel:reservas");
+
       const channel = await db.query.transactions.findFirst({
         where: and(
           eq(schema.transactions.nReserve, input.nReserve),

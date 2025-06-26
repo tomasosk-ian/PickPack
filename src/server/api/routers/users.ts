@@ -15,7 +15,8 @@ export const userRouter = createTRPCRouter({
         userId: z.string(),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      await trpcTienePermisoCtx(ctx, PERMISO_ADMIN);
       const user = await clerkClient.users.getUser(input.userId);
       const usuarioEntidades = await db.query.usuarioEntidad.findFirst({
         where: eq(schema.usuarioEntidad.userId, user.id)

@@ -4,6 +4,7 @@ import { db, schema } from "~/server/db";
 import { and, eq } from "drizzle-orm";
 import { PrivateConfigKeys, type PublicConfigKeys } from "~/lib/config";
 import { TRPCError } from "@trpc/server";
+import { trpcTienePermisoCtx } from "~/lib/roles";
 
 export const configRouter = createTRPCRouter({
   getKey: publicProcedure
@@ -36,6 +37,7 @@ export const configRouter = createTRPCRouter({
       key: z.custom<PrivateConfigKeys>(),
     }))
     .query(async ({ input, ctx }) => {
+      await trpcTienePermisoCtx(ctx, "panel:params");
       return await ctx.db.query.privateConfig.findFirst({
         where: and(
           eq(schema.privateConfig.key, input.key),
@@ -49,6 +51,7 @@ export const configRouter = createTRPCRouter({
       value: z.string()
     }))
     .mutation(async ({ ctx, input }) => {
+      await trpcTienePermisoCtx(ctx, "panel:params");
       if (!ctx.orgId) {
         throw new TRPCError({ code: 'BAD_REQUEST', message: "Sin entidad" });
       }
@@ -74,6 +77,7 @@ export const configRouter = createTRPCRouter({
       value: z.string()
     }))
     .mutation(async ({ ctx, input }) => {
+      await trpcTienePermisoCtx(ctx, "panel:params");
       if (!ctx.orgId) {
         throw new TRPCError({ code: 'BAD_REQUEST', message: "Sin entidad" });
       }
@@ -95,12 +99,14 @@ export const configRouter = createTRPCRouter({
     }),
   listPublicAdmin: protectedProcedure
     .query(async ({ ctx }) => {
+      await trpcTienePermisoCtx(ctx, "panel:params");
       return await ctx.db.query.publicConfig.findMany({
         where: eq(schema.publicConfig.entidadId, ctx.orgId ?? "")
       });
     }),
   listPrivateAdmin: protectedProcedure
     .query(async ({ ctx }) => {
+      await trpcTienePermisoCtx(ctx, "panel:params");
       return await ctx.db.query.privateConfig.findMany({
         where: eq(schema.privateConfig.entidadId, ctx.orgId ?? "")
       });
@@ -110,6 +116,7 @@ export const configRouter = createTRPCRouter({
       key: z.custom<PublicConfigKeys>(),
     }))
     .mutation(async ({ ctx, input }) => {
+      await trpcTienePermisoCtx(ctx, "panel:params");
       await db.delete(schema.publicConfig)
         .where(and(
           eq(schema.publicConfig.key, input.key),
@@ -123,6 +130,7 @@ export const configRouter = createTRPCRouter({
       key: z.custom<PrivateConfigKeys>(),
     }))
     .mutation(async ({ ctx, input }) => {
+      await trpcTienePermisoCtx(ctx, "panel:params");
       await db.delete(schema.privateConfig)
         .where(and(
           eq(schema.privateConfig.key, input.key),

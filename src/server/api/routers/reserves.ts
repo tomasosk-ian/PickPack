@@ -16,6 +16,7 @@ import { lockerValidator } from "./lockers";
 import { Input } from "~/components/ui/input";
 import { getClientByEmail } from "./lockerReserveRouter";
 import { TRPCError } from "@trpc/server";
+import { trpcTienePermisoCtx } from "~/lib/roles";
 
 export type Reserve = {
   identifier: string | null;
@@ -39,6 +40,8 @@ export type GroupedReserves = {
 
 export const reserveRouter = createTRPCRouter({
   get: protectedProcedure.query(async ({ ctx }) => {
+    await trpcTienePermisoCtx(ctx, "panel:reservas");
+
     checkBoxAssigned();
     const result = await ctx.db.query.reservas.findMany({
       with: { clients: true },
@@ -100,6 +103,7 @@ export const reserveRouter = createTRPCRouter({
   //   return groupedByNReserve;
   // }),
   getActive: protectedProcedure.query(async ({ ctx }) => {
+    await trpcTienePermisoCtx(ctx, "panel:reservas");
     checkBoxAssigned();
 
     const result = await db.query.reservas.findMany({
@@ -142,6 +146,8 @@ export const reserveRouter = createTRPCRouter({
       }),
     )
     .query(async ({ input, ctx }) => {
+      await trpcTienePermisoCtx(ctx, "panel:reservas");
+
       // Evita llamadas innecesarias si `nReserve` es inválido
       if (!input.nReserve) throw new Error("Invalid nReserve");
       checkBoxAssigned();
@@ -220,6 +226,8 @@ export const reserveRouter = createTRPCRouter({
       }),
     )
     .query(async ({ input, ctx }) => {
+      await trpcTienePermisoCtx(ctx, "panel:clientes");
+      
       checkBoxAssigned();
       const result = await ctx.db.query.reservas.findMany({
         with: { clients: true },
@@ -329,6 +337,8 @@ export const reserveRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await trpcTienePermisoCtx(ctx, "panel:reservas");
+
       const response = await db
         .update(reservas)
         .set({ FechaFin: input.FechaFin, FechaInicio: input.FechaInicio })
@@ -347,6 +357,7 @@ export const reserveRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await trpcTienePermisoCtx(ctx, "panel:reservas");
       await db
         .delete(schema.reservas)
         .where(and(

@@ -2,11 +2,18 @@
 import { List, ListTile } from "~/components/list";
 import { Title } from "~/components/title";
 import { Badge } from "~/components/ui/badge";
-import { ROL_ADMIN_ID } from "~/lib/permisos";
+import { PERMISO_ADMIN, ROL_ADMIN_ID, tienePermiso } from "~/lib/permisos";
 import { api } from "~/trpc/server";
 import { AddRole } from "./add-role";
+import { redirect } from "next/navigation";
 
 export default async function Home() {
+  const { perms } = await api.user.self.query();
+  if (!tienePermiso(perms, PERMISO_ADMIN)) {
+    redirect("/accessdenied");
+    return <></>;
+  }
+
   const roles = (await api.user.listRoles.query({ asignables: false }))
     .filter(v => v.id !== ROL_ADMIN_ID);
 

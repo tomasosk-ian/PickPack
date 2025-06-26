@@ -1,6 +1,7 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { env } from "~/env";
+import { trpcTienePermisoCtxAny } from "~/lib/roles";
 import { createId } from "~/lib/utils";
 
 import {
@@ -213,7 +214,12 @@ export const sizeRouter = createTRPCRouter({
         sizeId: z.number(),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      await trpcTienePermisoCtxAny(ctx, [
+        "panel:locales",
+        "panel:sizes"
+      ]);
+
       const sizeResponse = await fetch(`${env.SERVER_URL}/api/size`);
 
       // Handle the response from the external API
@@ -246,7 +252,12 @@ export const sizeRouter = createTRPCRouter({
         image: z.string().nullable(),
       }),
     )
-    .mutation(({ ctx, input }) => {
+    .mutation(async ({ ctx, input }) => {
+      await trpcTienePermisoCtxAny(ctx, [
+        "panel:locales",
+        "panel:sizes"
+      ]);
+
       return ctx.db
         .update(schema.sizes)
         .set({ image: input.image })

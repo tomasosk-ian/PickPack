@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
+import { trpcTienePermisoCtx } from "~/lib/roles";
 import { createId } from "~/lib/utils";
 
 import {
@@ -30,7 +31,8 @@ export const storeRouter = createTRPCRouter({
         storeId: z.string(),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      await trpcTienePermisoCtx(ctx, "panel:locales");
       const store = await db.query.stores.findFirst({
         where: eq(schema.stores.identifier, input.storeId),
         with: {
@@ -73,6 +75,8 @@ export const storeRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await trpcTienePermisoCtx(ctx, "panel:locales");
+
       if (!ctx.orgId) {
         throw new TRPCError({ code: 'BAD_REQUEST', message: "Sin entidad" });
       }
@@ -114,6 +118,7 @@ export const storeRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await trpcTienePermisoCtx(ctx, "panel:locales");
       const a = await ctx.db.query.stores.findFirst({
         where: eq(schema.stores.identifier, input.identifier)
       });
@@ -159,6 +164,7 @@ export const storeRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await trpcTienePermisoCtx(ctx, "panel:locales");
       await db
         .delete(schema.stores)
         .where(and(

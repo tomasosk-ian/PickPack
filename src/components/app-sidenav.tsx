@@ -19,7 +19,7 @@ import { usePerms } from "./perms-provider";
 import SelectEntidad from "./selector-entidad";
 
 export default function AppSidenav() {
-  const { isAdmin } = usePerms();
+  const { isAdmin, hasPerm } = usePerms();
 
   return (
     <div className="text-xs">
@@ -51,40 +51,38 @@ export default function AppSidenav() {
             Reportes
           </SidenavItem>
         )}{" "}
-        {isAdmin && (
-          <SidenavItem
-            icon={<CogIcon />}
-            disabled={false}
-            href="/panel/parametros"
-          >
-            Parámetros
-          </SidenavItem>
-        )}
-        <SidenavSeparator>Administración</SidenavSeparator>
-        <SidenavItem icon={<LayoutDashboardIcon />} href="/panel/monitor">
-          Monitor
-        </SidenavItem>
-        <SidenavItem icon={<CloudIcon />} href="/panel/ciudades">
+        {isAdmin && <SidenavItem icon={<CloudIcon />} href="/panel/ciudades">
           Ciudades{" "}
-        </SidenavItem>
-        <SidenavItem icon={<AlignStartVerticalIcon />} href="/panel/locales">
-          Locales
-        </SidenavItem>
-        <SidenavItem icon={<GroupIcon />} href="/panel/tamanos">
-          Tamaños
-        </SidenavItem>
-        <SidenavItem icon={<DollarSignIcon />} href="/panel/monedas">
+        </SidenavItem>}
+        {isAdmin && <SidenavItem icon={<DollarSignIcon />} href="/panel/monedas">
           Monedas
-        </SidenavItem>
-        <SidenavItem icon={<CloudIcon />} href="/panel/clientes">
+        </SidenavItem>}
+        <SidenavSeparator>Administración</SidenavSeparator>
+        {hasPerm("panel:params") && <SidenavItem
+          icon={<CogIcon />}
+          disabled={false}
+          href="/panel/parametros"
+        >
+          Parámetros
+        </SidenavItem>}
+        {hasPerm("panel:monitor") && <SidenavItem icon={<LayoutDashboardIcon />} href="/panel/monitor">
+          Monitor
+        </SidenavItem>}
+        {hasPerm("panel:locales") && <SidenavItem icon={<AlignStartVerticalIcon />} href="/panel/locales">
+          Locales
+        </SidenavItem>}
+        {hasPerm("panel:sizes") && <SidenavItem icon={<GroupIcon />} href="/panel/tamanos">
+          Tamaños
+        </SidenavItem>}
+        {hasPerm("panel:clientes") && <SidenavItem icon={<CloudIcon />} href="/panel/clientes">
           Clientes{" "}
-        </SidenavItem>
-        <SidenavItem icon={<ReceiptIcon />} href="/panel/reservas">
+        </SidenavItem>}
+        {hasPerm("panel:reservas") && <SidenavItem icon={<ReceiptIcon />} href="/panel/reservas">
           Reservas
-        </SidenavItem>
-        <SidenavItem icon={<PercentCircleIcon />} href="/panel/cupones">
+        </SidenavItem>}
+        {hasPerm("panel:cupones") && <SidenavItem icon={<PercentCircleIcon />} href="/panel/cupones">
           Cupones{" "}
-        </SidenavItem>
+        </SidenavItem>}
         <div className="bottom-0 right-0 px-5">
           <About />
         </div>
