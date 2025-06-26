@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { env } from "~/env";
 import { db, schema } from "~/server/db";
 import { eq } from "drizzle-orm";
@@ -73,7 +73,7 @@ export type Boxes = z.infer<typeof boxesValidator>;
 export type Token = z.infer<typeof tokenValidator>;
 
 export const lockerRouter = createTRPCRouter({
-  get: publicProcedure.query(async ({ ctx }) => {
+  get: protectedProcedure.query(async ({ ctx }) => {
     const locerResponse = await fetch(
       `${env.SERVER_URL}/api/locker/byTokenEmpresa/${env.TOKEN_EMPRESA}`,
     );
