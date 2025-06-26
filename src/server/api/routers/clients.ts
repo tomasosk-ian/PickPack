@@ -160,4 +160,4 @@ export const clientsRouter = createTRPCRouter({
     }),
 });
 
-export type Client = RouterOutputs["client"]["get"][number];
+export type Client = RouterOutputs["clients"]["get"][number];

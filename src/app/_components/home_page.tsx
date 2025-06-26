@@ -90,7 +90,7 @@ export default function HomePage(props: {
     refetchSizes();
   }, [store]);
 
-  const { mutateAsync: createClient } = api.client.create.useMutation();
+  const { mutateAsync: createClient } = api.clients.create.useMutation();
 
   const [total, setTotal] = useState<number>(0);
   const [coin, setCoin] = useState<Coin>();

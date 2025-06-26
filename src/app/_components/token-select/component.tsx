@@ -26,7 +26,7 @@ export default function SelectToken({ t, ...props }: {
 }) {
   const [error, setError] = useState<string | null>(null);
   const [token, setToken] = useState<number>();
-  const { data: client, isLoading } = api.client.getByEmailAndToken.useQuery({
+  const { data: client, isLoading } = api.clients.getByEmailAndToken.useQuery({
     email: props.email,
     token: token ?? Number.MIN_SAFE_INTEGER
   });

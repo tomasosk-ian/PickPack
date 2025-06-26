@@ -366,6 +366,22 @@ export const userRouter = createTRPCRouter({
 
       return "ok";
     }),
+  getRole: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      await trpcTienePermisoCtx(ctx, PERMISO_ADMIN);
+      return await db.query.roles.findFirst({
+        with: {
+          permisos: true,
+          company: true,
+        },
+        where: eq(schema.roles.id, input.id),
+      });
+    }),
   listRoles: protectedProcedure
     .input(
       z.object({

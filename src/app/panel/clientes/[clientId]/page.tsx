@@ -3,7 +3,7 @@ import { api } from "~/trpc/server";
 import ClientPage from "./client-page";
 
 export default async function Channel(props: { params: { clientId: string } }) {
-  const client = await api.client.getById.query({
+  const client = await api.clients.getById.query({
     identifier: parseInt(props.params.clientId),
   });
   const reservasRecord = await api.reserve.getByClient.query({

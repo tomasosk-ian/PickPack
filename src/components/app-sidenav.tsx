@@ -33,15 +33,15 @@ export default function AppSidenav() {
           </SidenavItem>
         )}
         {isAdmin && (
-          <SidenavItem icon={<BanIcon />} disabled={true}>
+          <SidenavItem icon={<BanIcon />} href="/panel/roles">
             Roles
           </SidenavItem>
         )}
-        {isAdmin && (
+        {/* {isAdmin && (
           <SidenavItem icon={<KeyRound />} disabled={true}>
             Permisos
           </SidenavItem>
-        )}
+        )} */}
         {isAdmin && (
           <SidenavItem
             icon={<AreaChartIcon />}

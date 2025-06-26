@@ -36,7 +36,7 @@ export const appRouter = createTRPCRouter({
   fee: feeRouter,
   coin: coinRouter,
   transaction: transactionRouter,
-  client: clientsRouter,
+  clients: clientsRouter,
   lockerReserve: lockerReserveRouter,
   email: emailRouter,
   mobbex: mobbexRouter,
