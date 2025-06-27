@@ -54,7 +54,8 @@ export const reportsRouter = createTRPCRouter({
       z.object({
         startDate: z.string(),
         endDate: z.string(),
-        filterSerie: z.array(z.string()).nullable()
+        filterSerie: z.array(z.string()).nullable(),
+        filterEntities: z.array(z.string()).nullable(),
       }),
     )
     .query(async ({ input }) => {
@@ -74,6 +75,11 @@ export const reportsRouter = createTRPCRouter({
       if (Array.isArray(input.filterSerie)) {
         const validSeries = new Set(input.filterSerie);
         reserves = reserves.filter(v => validSeries.has(v.NroSerie ?? ""));
+      }
+
+      if (Array.isArray(input.filterEntities)) {
+        const validEnts = new Set(input.filterEntities);
+        reserves = reserves.filter(v => validEnts.has(v.entidadId ?? ""));
       }
 
       const sizeMap = await getSizesMap();
@@ -123,8 +129,11 @@ export const reportsRouter = createTRPCRouter({
     return boxCountsBySize;
   }),
 
-  getSizes: protectedProcedure.query(async () => {
-    const sizesData = await db.query.sizes.findMany();
+  getSizes: protectedProcedure.query(async ({ ctx }) => {
+    const sizesData = await db.query.sizes.findMany({
+      where: eq(schema.sizes.entidadId, ctx.orgId ?? "")
+    });
+
     return sizesData;
   }),
 
@@ -133,7 +142,8 @@ export const reportsRouter = createTRPCRouter({
       z.object({
         startDate: z.string(),
         endDate: z.string(),
-        filterSerie: z.array(z.string()).nullable()
+        filterSerie: z.array(z.string()).nullable(),
+        filterEntities: z.array(z.string()).nullable(),
       }),
     )
     .query(async ({ input }) => {
@@ -147,12 +157,18 @@ export const reportsRouter = createTRPCRouter({
             lte(reserva.FechaFin, endDate),
             isNotNull(reserva.FechaInicio),
             isNotNull(reserva.FechaFin),
+            isNotNull(reserva.nReserve),
           ),
       });
 
       if (Array.isArray(input.filterSerie)) {
         const validSeries = new Set(input.filterSerie);
         reserves = reserves.filter(v => validSeries.has(v.NroSerie ?? ""));
+      }
+
+      if (Array.isArray(input.filterEntities)) {
+        const validEnts = new Set(input.filterEntities);
+        reserves = reserves.filter(v => validEnts.has(v.entidadId ?? ""));
       }
 
       // Calculate the duration of each reservation in days and accumulate data by duration

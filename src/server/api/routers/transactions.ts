@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createId } from "~/lib/utils";
-import { and, gte, lte, isNotNull, eq } from "drizzle-orm";
+import { and, gte, lte, isNotNull, eq, inArray } from "drizzle-orm";
 
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { RouterOutputs } from "~/trpc/shared";
@@ -69,18 +69,23 @@ export const transactionRouter = createTRPCRouter({
       z.object({
         startDate: z.string(),
         endDate: z.string(),
+        filterEntities: z.array(z.string()).nullable(),
       }),
     )
     .query(async ({ input, ctx }) => {
       const { startDate, endDate } = input;
 
+      const conditions = [
+        gte(schema.transactions.confirmedAt, startDate),
+        lte(schema.transactions.confirmedAt, endDate),
+      ];
+
+      if (input.filterEntities && input.filterEntities.length > 0) {
+        conditions.push(inArray(schema.transactions.entidadId, input.filterEntities));
+      }
+
       const result = await db.query.transactions.findMany({
-        where: (transaction) =>
-          and(
-            gte(transaction.confirmedAt, startDate),
-            lte(transaction.confirmedAt, endDate),
-            eq(transaction.entidadId, ctx.orgId ?? ""),
-          ),
+        where: and(...conditions),
         orderBy: (transaction, { asc }) => [asc(transaction.confirmedAt)],
       });
 

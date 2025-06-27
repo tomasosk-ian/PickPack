@@ -15,16 +15,6 @@ const preparedCompanyById = db.query.companies
   })
   .prepare();
 
-const preparedCompanyGet = db.query.companies
-  .findFirst({
-    where: eq(schema.companies.id, sql.placeholder("companyId")),
-    columns: {
-      id: true,
-      name: true,
-    },
-  })
-  .prepare();
-
 export const companiesRouter = createTRPCRouter({
   list: protectedProcedure.query(async ({ ctx }) => {
     const { perms, roles } = await serverUserPerms(
@@ -47,11 +37,6 @@ export const companiesRouter = createTRPCRouter({
     }
 
     return res;
-  }),
-
-  listBasic: protectedProcedure.query(async ({ ctx }) => {
-    await trpcTienePermisoCtx(ctx, PERMISO_ADMIN);
-    return await preparedCompanyGet.execute();
   }),
 
   getById: protectedProcedure

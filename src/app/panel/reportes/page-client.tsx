@@ -22,17 +22,54 @@ import { MultiSelect } from "~/components/multi-select";
 import dayjs from "dayjs";
 
 export default function LockerOcupationPage() {
-  const router = useRouter();
-
+  const [tempEntidadesFiltro, setTempEntidadesFiltro] = useState<null | string[]>(null);
   const [tempLockersSerie, setTempLockersSerie] = useState<null | string[]>(null);
   const [tempStartDate, setTempStartDate] = useState(dayjs(Date.now()).format("YYYY-MM-DD"));
   const [tempEndDate, setTempEndDate] = useState(dayjs(Date.now()).format("YYYY-12-31"));
 
+  const [entidadesFiltro, setEntidadesFiltro] = useState<null | string[]>(tempEntidadesFiltro);
   const [lockersSerie, setLockersSerie] = useState<null | string[]>(tempLockersSerie);
   const [startDate, setStartDate] = useState(tempStartDate);
   const [endDate, setEndDate] = useState(tempEndDate);
 
+  const { data: entidades } =
+    api.companies.list.useQuery();
+
   const { data: lockers } = api.locker.get.useQuery();
+
+  const { data: averageDurationData } =
+    api.reports.getAverageReservationDuration.useQuery({
+      startDate,
+      endDate,
+      filterSerie: lockersSerie,
+      filterEntities: entidadesFiltro,
+    });
+
+  const { data: ocupationData } =
+    api.reports.getOcupattion.useQuery({
+      startDate,
+      endDate,
+      filterSerie: lockersSerie,
+      filterEntities: entidadesFiltro,
+    });
+  
+  const { data: sizes } = api.reports.getSizes.useQuery();
+  const { data: transactionsData } =
+    api.transaction.getTransactionsByDate.useQuery({
+      startDate,
+      endDate,
+      filterEntities: entidadesFiltro,
+    });
+
+  const { data: capacityBySize } =
+    api.reports.getTotalBoxesAmountPerSize.useQuery();
+
+  const applyDateFilter = () => {
+    setStartDate(tempStartDate);
+    setEndDate(tempEndDate);
+    setLockersSerie(tempLockersSerie);
+    setEntidadesFiltro(tempEntidadesFiltro);
+  };
 
   const dataLockers = useMemo(() => {
     if (!lockers) {
@@ -46,36 +83,6 @@ export default function LockerOcupationPage() {
 
     return lockers;
   }, [lockers]);
-
-  const { data: averageDurationData } =
-    api.reports.getAverageReservationDuration.useQuery({
-      startDate,
-      endDate,
-      filterSerie: lockersSerie,
-    });
-
-  const { data: ocupationData } =
-    api.reports.getOcupattion.useQuery({
-      startDate,
-      endDate,
-      filterSerie: lockersSerie,
-    });
-  
-  const { data: sizes } = api.reports.getSizes.useQuery();
-  const { data: transactionsData } =
-    api.transaction.getTransactionsByDate.useQuery({
-      startDate,
-      endDate,
-    });
-
-  const { data: capacityBySize } =
-    api.reports.getTotalBoxesAmountPerSize.useQuery();
-
-  const applyDateFilter = () => {
-    setStartDate(tempStartDate);
-    setEndDate(tempEndDate);
-    setLockersSerie(tempLockersSerie);
-  };
 
   const totalBySize = useMemo(() => {
     if (!ocupationData || !sizes) return {};
@@ -202,7 +209,7 @@ export default function LockerOcupationPage() {
           <Title>Ocupación de Lockers</Title>
         </div>
 
-        <div className="my-4 flex gap-4 justify-center items-center">
+        <div className="my-4 flex gap-4 justify-center items-end">
           <label>
             Fecha de Inicio:
             <input
@@ -230,6 +237,16 @@ export default function LockerOcupationPage() {
               value: v.nroSerieLocker
             }))}
             placeholder="Filtrar por lockers"
+          />
+          <MultiSelect 
+            onValueChange={setTempEntidadesFiltro}
+            defaultValue={tempEntidadesFiltro ?? []}
+            value={tempEntidadesFiltro ?? []}
+            options={entidades?.map(v => ({
+              label: v.name,
+              value: v.id
+            })) ?? []}
+            placeholder="Filtrar por entidades"
           />
           <Button onClick={applyDateFilter}>Aplicar</Button>
         </div>
@@ -290,7 +307,7 @@ export default function LockerOcupationPage() {
         <div className="mt-8 space-y-8">
           <div style={{ width: "100%", height: 400 }}>
             <Title>Porcentaje de Ocupación vs Días</Title>
-            <ResponsiveContainer>
+            <ResponsiveContainer className="py-8">
               <BarChart
                 data={chartDataOccupation}
                 margin={{ top: 20, right: 30, left: 30, bottom: 20 }}
@@ -330,7 +347,7 @@ export default function LockerOcupationPage() {
           </div>
           <div style={{ width: "100%", height: 400 }}>
             <Title>Total de Ocupación</Title>
-            <ResponsiveContainer>
+            <ResponsiveContainer className="py-8">
               <PieChart>
                 <Pie
                   data={pieData}
@@ -358,7 +375,7 @@ export default function LockerOcupationPage() {
           </div>
           <div style={{ width: "100%", height: 400 }}>
             <Title>Reservas por Día</Title>
-            <ResponsiveContainer>
+            <ResponsiveContainer className="py-8">
               <BarChart data={dailyReservationsData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="day" />
@@ -379,7 +396,7 @@ export default function LockerOcupationPage() {
               <strong>Total Facturación:</strong> $
               {billingByDay.total.toFixed(2)}
             </p>
-            <ResponsiveContainer>
+            <ResponsiveContainer className="py-8">
               <BarChart data={billingByDay.data}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="day" />
@@ -396,7 +413,7 @@ export default function LockerOcupationPage() {
               <strong>Total de reservas:</strong>{" "}
               {totalReservationsFromDuration}
             </p>
-            <ResponsiveContainer width="100%" height={400}>
+            <ResponsiveContainer className="py-8" width="100%" height={400}>
               <BarChart
                 data={averageDurationData?.data}
                 margin={{
