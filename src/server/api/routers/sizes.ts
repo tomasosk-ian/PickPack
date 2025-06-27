@@ -38,6 +38,16 @@ async function sizesList(localId: string | null, entityId: string | null): Promi
             eq(schema.feeData.localId, localId),
           ),
         });
+
+        if (!entityId) {
+          const store = await db.query.stores.findFirst({
+            where: eq(schema.stores.identifier, localId)
+          });
+
+          if (store) {
+            entityId = store.entidadId ?? entityId;
+          }
+        }
       } else if (typeof entityId === 'string') {
         if (allLocales.length > 0) {
           fee = await db.query.feeData.findFirst({
@@ -71,6 +81,7 @@ async function sizesList(localId: string | null, entityId: string | null): Promi
         // Si el tamaño no existe, insértalo
         await db.insert(schema.sizes).values({
           ...v,
+          entidadId: entityId ?? fee?.entidadId,
         });
       }
     }),
@@ -107,6 +118,15 @@ async function sizeExpand(v: LockerSize, localId: string): Promise<LockerSize> {
     ),
   });
 
+  let entityId = null;
+  const store = await db.query.stores.findFirst({
+    where: eq(schema.stores.identifier, localId)
+  });
+
+  if (store) {
+    entityId = store.entidadId ?? entityId;
+  }
+  
   v.tarifa = fee?.identifier;
 
   const existingSize = await db.query.sizes.findFirst({
@@ -126,6 +146,7 @@ async function sizeExpand(v: LockerSize, localId: string): Promise<LockerSize> {
     // Si el tamaño no existe, insértalo
     await db.insert(schema.sizes).values({
       ...v,
+      entidadId: entityId ?? fee?.entidadId,
     });
   }
 

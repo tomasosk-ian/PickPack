@@ -126,6 +126,7 @@ export const mpRouter = createTRPCRouter({
         .values({
           mpMetaJson: JSON.stringify(meta),
           idTransactionsJson: JSON.stringify(r),
+          entidadId: ent.id,
         })
         .returning();
 

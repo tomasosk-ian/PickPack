@@ -214,6 +214,7 @@ export async function POST(request: NextRequest) {
                 IdTransaction: reserve.IdTransaction,
                 client: client?.email,
                 nReserve: nReserve,
+                entidadId: reserve.entidadId,
               });
 
               /* if (setReserves) {
@@ -230,6 +231,7 @@ export async function POST(request: NextRequest) {
               client: reserve.client,
               amount: total,
               nReserve: nReserve,
+              entidadId: reserve.entidadId,
             });
 
             if (cupon_id) {

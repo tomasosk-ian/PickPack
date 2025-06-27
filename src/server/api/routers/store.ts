@@ -97,7 +97,7 @@ export const storeRouter = createTRPCRouter({
         await ctx.db.insert(schema.storesLockers)
           .values({
             storeId: identifier,
-            serieLocker: input.serieLocker
+            serieLocker: input.serieLocker,
           });
       }
 

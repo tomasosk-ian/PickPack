@@ -70,6 +70,7 @@ export const clientsRouter = createTRPCRouter({
           prefijo: input.prefijo,
           telefono: input.telefono,
           dni: input.dni,
+          entidadId: input.entityId,
         });
         const id = parseInt(result.lastInsertRowid?.toString()!);
         return { id };

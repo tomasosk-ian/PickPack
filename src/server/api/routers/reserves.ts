@@ -289,6 +289,7 @@ export const reserveRouter = createTRPCRouter({
         IdTransaction: input.IdTransaction,
         client: client?.email,
         nReserve: input.nReserve,
+        entidadId: input.entityId,
       });
     }),
   updateReserve: protectedProcedure
