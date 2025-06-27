@@ -6,13 +6,13 @@ import {
   CogIcon,
   DollarSignIcon,
   GroupIcon,
-  KeyRound,
   ReceiptIcon,
   UserIcon,
   LayoutDashboardIcon,
   PercentCircleIcon,
   AreaChartIcon,
   BanIcon,
+  Building2,
 } from "lucide-react";
 import { About } from "./about-dialog";
 import { usePerms } from "./perms-provider";
@@ -35,6 +35,11 @@ export default function AppSidenav() {
         {isAdmin && (
           <SidenavItem icon={<BanIcon />} href="/panel/roles">
             Roles
+          </SidenavItem>
+        )}
+        {isAdmin && (
+          <SidenavItem icon={<Building2 />} href="/panel/companies">
+            Entidades
           </SidenavItem>
         )}
         {/* {isAdmin && (

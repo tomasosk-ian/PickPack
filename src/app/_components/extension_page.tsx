@@ -16,7 +16,7 @@ import Success from "./success/success";
 import { Client } from "~/server/api/routers/clients";
 import Payment from "./payment/page";
 import { Coin } from "~/server/api/routers/coin";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import UserForm from "./user/userForm";
 import ButtonCustomComponent from "~/components/buttonCustom";
 import SelectEmail from "./email-select/component";
@@ -104,6 +104,16 @@ export default function Extension({ t, ...props }: {
 
     return true;
   };
+
+  const store = useMemo(() => {
+    if (!reserve || !stores) {
+      return null;
+    }
+
+    return stores
+      .filter(v => v.entidadId === client.entidadId)
+      .find((s) => s.lockers.some(l => l.serieLocker == reserve.NroSerie))!
+  }, [reserve]);
 
   function AlertFailedResponse() {
     return (
@@ -251,7 +261,7 @@ export default function Extension({ t, ...props }: {
                 <Booking
                   t={t}
                   onEdit={undefined}
-                  store={stores.find((s) => s.lockers.some(l => l.serieLocker == reserve.NroSerie))!}
+                  store={store!}
                   startDate={startDate!}
                   endDate={endDate!}
                   reserves={[reserve]}
@@ -307,9 +317,7 @@ export default function Extension({ t, ...props }: {
                     setPagoOk={setPagoOk}
                     setReserves={setReserves}
                     sizes={props.sizes}
-                    store={
-                      stores.find((s) => s.lockers.some(l => l.serieLocker == reserve.NroSerie))!
-                    }
+                    store={store!}
                     total={total}
                     cupon={null}
                     isExt={true}
@@ -325,7 +333,7 @@ export default function Extension({ t, ...props }: {
               <Success
                 t={t}
                 reserves={reserves}
-                store={stores?.find((s) => s.lockers.some(l => l.serieLocker == reserve!.NroSerie))!}
+                store={store!}
                 nReserve={nReserve!}
                 total={total}
                 coin={coin}

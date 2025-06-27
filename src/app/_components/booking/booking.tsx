@@ -242,12 +242,12 @@ export default function Booking({ t, ...props }: {
                   <a className="text-xs font-bold text-red-500 no-underline ">
                     ARS
                   </a>
-                  {props.cupon.valor_descuento} {t("descuento aplicado")}
+                  {props.cupon.valor_descuento} {t("discountApplied")}
                 </span>
               )}
               {props.cupon?.tipo_descuento == "porcentaje" && (
                 <span className="text-xs text-red-500">
-                  -{props.cupon.valor_descuento}% {t("descuento aplicado")}
+                  -{props.cupon.valor_descuento}% {t("discountApplied")}
                 </span>
               )}
             </div>

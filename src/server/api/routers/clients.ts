@@ -110,7 +110,8 @@ export const clientsRouter = createTRPCRouter({
             db.select()
               .from(schema.reservas)
               .where(and(
-                eq(schema.reservas.client, table.identifier),
+                eq(schema.reservas.client, table.email),
+                eq(schema.reservas.entidadId, table.entidadId),
                 eq(schema.reservas.Token1, input.token),
               ))
           )

@@ -25,6 +25,18 @@ export const storeRouter = createTRPCRouter({
       return stores;
     }),
 
+  getProt: protectedProcedure
+    .query(({ ctx }) => {
+      const stores = ctx.db.query.stores.findMany({
+        where: eq(schema.stores.entidadId, ctx.orgId ?? ""),
+        with: {
+          city: true,
+          lockers: true,
+        },
+      });
+      return stores;
+    }),
+
   getById: protectedProcedure
     .input(
       z.object({

@@ -74,7 +74,6 @@ export const companiesRouter = createTRPCRouter({
     .input(
       z.object({
         name: z.string().min(1).max(255),
-        description: z.string().min(0).max(1023),
       }),
     )
     .mutation(async ({ input, ctx }) => {

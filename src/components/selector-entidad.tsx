@@ -11,6 +11,7 @@ import {
 import { toast } from "sonner";
 import { api } from "~/trpc/react";
 import { SidenavSeparator } from "./sidenav";
+import { useRouter } from "next/navigation";
 
 export default function SelectEntidad() {
   const { isAdmin } = usePerms();
@@ -20,6 +21,8 @@ export default function SelectEntidad() {
     api.user.selectEntidad.useMutation();
   const { data: user, isLoading: isLoadingUser, refetch } = api.user.self.useQuery();
   const [entidad, setEntidad] = useState(user?.userEntity?.entidadId);
+  const utils = api.useUtils();
+  const router = useRouter();
 
   useEffect(() => {
     if (user) {
@@ -40,6 +43,8 @@ export default function SelectEntidad() {
         .then(() => {
           toast.message("Entidad cambiada");
           refetch();
+          utils.invalidate();
+          router.refresh();
         })
         .catch((e) => {
           console.error("error asignar usuarios:", e);
