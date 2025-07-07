@@ -28,9 +28,8 @@ import {
 } from "~/components/ui/alert-dialog";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { UploadButton } from "~/utils/uploadthing";
 import { RouterOutputs } from "~/trpc/shared";
-import { FormPublicGeneric } from "../../parametros/page";
+import { FormPublicGeneric } from "../../parametros/util";
 
 export default function EntPage({ ent }: { ent: RouterOutputs['companies']['getById'] }) {
   const [name, setName] = useState(ent!.name);

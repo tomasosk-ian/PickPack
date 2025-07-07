@@ -191,6 +191,10 @@ export const sizeRouter = createTRPCRouter({
       }),
     )
     .query(async ({ input }) => {
+      if (input.store === '') {
+        return null;
+      }
+
       return sizesList(input.store, null);
     }),
   getProt: protectedProcedure
