@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { env } from "~/env";
 import { trpcTienePermisoCtxAny } from "~/lib/roles";
@@ -11,7 +11,7 @@ import {
 } from "~/server/api/trpc";
 import { db, schema } from "~/server/db";
 
-async function sizesList(localId: string | null, entityId: string | null): Promise<z.infer<typeof responseValidator>> {
+export async function sizesList(localId: string | null, entityId: string | null): Promise<z.infer<typeof responseValidator>> {
   const sizeResponse = await fetch(`${env.SERVER_URL}/api/size`);
 
   // Handle the response from the external API
@@ -64,9 +64,16 @@ async function sizesList(localId: string | null, entityId: string | null): Promi
       }
 
       v.tarifa = fee?.identifier;
+      entityId = entityId ?? fee?.entidadId ?? null;
+      if (!entityId) {
+        throw new Error("sizesList !entityId " + localId + " " + entityId)
+      }
 
       const existingSize = await db.query.sizes.findFirst({
-        where: eq(schema.sizes.id, v.id), // Utiliza el nombre correcto del campo
+        where: and(
+          eq(schema.sizes.id, v.id),
+          eq(schema.sizes.entidadId, entityId),
+        )
       });
 
       if (existingSize) {
@@ -75,8 +82,14 @@ async function sizesList(localId: string | null, entityId: string | null): Promi
           .update(schema.sizes)
           .set({
             ...v,
+            entidadId: entityId,
           })
-          .where(eq(schema.sizes.id, v.id));
+          .where(
+            and(
+              eq(schema.sizes.id, v.id),
+              eq(schema.sizes.entidadId, entityId),
+            )
+          );
       } else {
         // Si el tamaño no existe, insértalo
         await db.insert(schema.sizes).values({
@@ -103,54 +116,71 @@ async function disponibilidad(nroSerieLocker: string, inicio: string | null, fin
     return errorResponse.message || "Unknown error";
   }
 
-
   const reservedBoxData = await sizeResponse.json();
   const validatedData = responseValidator.parse(reservedBoxData);
   return validatedData;
 }
 
 type LockerSize = z.infer<typeof responseValidator>[number];
-async function sizeExpand(v: LockerSize, localId: string): Promise<LockerSize> {
-  const fee = await db.query.feeData.findFirst({
-    where: and(
-      eq(schema.feeData.size, v.id),
-      eq(schema.feeData.localId, localId),
-    ),
-  });
+const feeDataPreparedSE = db.query.feeData.findFirst({
+  where: and(
+    eq(schema.feeData.size, sql.placeholder("sizeId")),
+    eq(schema.feeData.localId, sql.placeholder("localId")),
+  ),
+}).prepare();
 
+const storesPreparedSE = db.query.stores.findFirst({
+  where: eq(schema.stores.identifier, sql.placeholder("localId"))
+}).prepare();
+
+const sizePreparedSE = db.query.sizes.findFirst({
+  where: and(
+    eq(schema.sizes.id, sql.placeholder("sizeId")),
+    eq(schema.sizes.entidadId, sql.placeholder("entidadId")),
+  )
+}).prepare();
+
+async function sizeExpand(lsize: LockerSize, localId: string): Promise<LockerSize> {
   let entityId = null;
-  const store = await db.query.stores.findFirst({
-    where: eq(schema.stores.identifier, localId)
-  });
+
+  const [fee, store] = await Promise.all([
+    feeDataPreparedSE.execute({ sizeId: lsize.id, localId }),
+    storesPreparedSE.execute({ localId }),
+  ]);
 
   if (store) {
-    entityId = store.entidadId ?? entityId;
+    entityId = store.entidadId ?? entityId ?? fee?.entidadId;
   }
-  
-  v.tarifa = fee?.identifier;
 
-  const existingSize = await db.query.sizes.findFirst({
-    where: eq(schema.sizes.id, v.id), // Utiliza el nombre correcto del campo
-  });
+  if (!entityId) {
+    throw new Error("sizeExpand sin entityId " + lsize.id + " " + localId);
+  }
 
+  const existingSize = await sizePreparedSE.execute({ sizeId: lsize.id, entidadId: entityId });
+
+  lsize.tarifa = fee?.identifier;
   if (existingSize) {
     // Si el tamaño ya existe, actualiza los datos
     await db
       .update(schema.sizes)
       .set({
-        ...v,
+        ...lsize,
+        entidadId: entityId,
       })
-      .where(eq(schema.sizes.id, v.id));
-    v.image = existingSize.image;
+      .where(and(
+        eq(schema.sizes.id, lsize.id),
+        eq(schema.sizes.entidadId, entityId),
+      ));
+    lsize.image = existingSize.image;
   } else {
     // Si el tamaño no existe, insértalo
     await db.insert(schema.sizes).values({
-      ...v,
-      entidadId: entityId ?? fee?.entidadId,
+      ...lsize,
+      entidadId: entityId,
     });
   }
 
-  return v;
+  return lsize;
 }
 
 export const sizeRouter = createTRPCRouter({
@@ -282,7 +312,12 @@ export const sizeRouter = createTRPCRouter({
       return ctx.db
         .update(schema.sizes)
         .set({ image: input.image })
-        .where(eq(schema.sizes.id, input.id));
+        .where(
+          and(
+            eq(schema.sizes.id, input.id),
+            eq(schema.sizes.entidadId, ctx.orgId ?? ""),
+          )
+        );
     }),
 });
 

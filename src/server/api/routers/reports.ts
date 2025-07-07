@@ -82,7 +82,7 @@ export const reportsRouter = createTRPCRouter({
         reserves = reserves.filter(v => validEnts.has(v.entidadId ?? ""));
       }
 
-      const sizeMap = await getSizesMap();
+      const sizeMap = await getSizesMap(input.filterEntities);
       const occupationData = groupOccupationDataByDay(reserves, sizeMap);
 
       return occupationData;
@@ -210,8 +210,12 @@ export const reportsRouter = createTRPCRouter({
 
 // Helper functions
 
-async function getSizesMap(): Promise<SizeMap> {
-  const sizesData = await db.query.sizes.findMany();
+async function getSizesMap(entitiesFilter: string[] | null): Promise<SizeMap> {
+  let sizesData = await db.query.sizes.findMany();
+  if (entitiesFilter) {
+    sizesData = sizesData.filter(v => entitiesFilter.some(k => k === v.entidadId));
+  }
+  
   const sizeMap: { [id: number]: string } = {};
 
   sizesData.forEach((size) => {
