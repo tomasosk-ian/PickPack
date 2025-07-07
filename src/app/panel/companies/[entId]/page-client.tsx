@@ -30,6 +30,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { UploadButton } from "~/utils/uploadthing";
 import { RouterOutputs } from "~/trpc/shared";
+import { FormPublicGeneric } from "../../parametros/page";
 
 export default function EntPage({ ent }: { ent: RouterOutputs['companies']['getById'] }) {
   const [name, setName] = useState(ent!.name);
@@ -82,6 +83,10 @@ export default function EntPage({ ent }: { ent: RouterOutputs['companies']['getB
                     />
                   </div>
                 </div>
+              </Card>
+              <Card className="p-5 mt-4">
+                <Label htmlFor="name">Parámetros</Label>
+                <FormPublicGeneric invalidate={() => {}} keyName="tyc_link" label="URL" title="Configurar URL de términos y condiciones" />
               </Card>
             </AccordionContent>
           </AccordionItem>
