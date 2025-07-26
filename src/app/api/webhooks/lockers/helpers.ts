@@ -32,7 +32,7 @@ export async function editTokenToServer(token: TokenRequestEditionBody, lockerSe
 	return response
 }
 
-export async function sendAfterFirstUseEmail({ to, lockerAddress, checkoutTime, userToken }: { to: string, lockerAddress: string, checkoutTime: string, userToken: string }) {
+export async function sendPackageDeliveredEmail({ to, lockerAddress, checkoutTime, userToken }: { to: string, lockerAddress: string, checkoutTime: string, userToken: string }) {
 
 	// const qrCode = await QRCode.toDataURL(userToken);
 	const fechaFin = checkoutTime.split('T')[0]
@@ -116,4 +116,10 @@ export function isWithinDates(start: string, end: string) {
 	const endDate = new Date(end)
 	const now = new Date(Date.now())
 	return startDate <= now && now <= endDate
+}
+
+export function addMinutes(base: string, toAdd: number): string {
+	const baseDate = new Date(base)
+	baseDate.setMinutes(baseDate.getMinutes() + toAdd - (60 * 3)) //GMT-3
+	return baseDate.toISOString().split('.')[0]!
 }
