@@ -87,8 +87,7 @@ export const emailRouter = createTRPCRouter({
 
           
           <p>Atentamente,</p>
-          <p><strong>M: +54 9 294 492-7340</strong></p>
-          <p><img src="https://utfs.io/f/4993f452-6f46-4f15-9c4b-bd63722923d8-i5bkwc.jpg"/></p>
+          
           
         </body>`,
           attachments: attachments,

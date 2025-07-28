@@ -47,20 +47,11 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
     .from(reservas)
     .where(eq(reservas.NroSerie, webhook.nroSerieLocker));
   const userTokenReservation = lockerReservations.find((reservation) => {
-    console.log(
-      "isWithinDates(reservation.FechaInicio!, reservation.FechaFin!)",
-      isWithinDates(reservation.FechaInicio!, reservation.FechaFin!),
-    );
-
     return (
       reservation.Token2 === parseInt(webhookData.Token) &&
       isWithinDates(reservation.FechaInicio!, reservation.FechaFin!)
     );
   });
-  console.log("userTokenReservation", userTokenReservation);
-  console.log("webhookData.Token", webhookData.Token);
-  console.log("Todas las reservas para este locker:", lockerReservations);
-
   if (userTokenReservation) {
     //TODO: Evitar el reenviado de mail y cambiarle fecha fin al tiempo extra configurado
     await sendGoodbyeEmail({ to: userTokenReservation!.client! });
