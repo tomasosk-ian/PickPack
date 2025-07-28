@@ -59,6 +59,8 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
   });
   console.log("userTokenReservation", userTokenReservation);
   console.log("webhookData.Token", webhookData.Token);
+  console.log("Todas las reservas para este locker:", lockerReservations);
+
   if (userTokenReservation) {
     //TODO: Evitar el reenviado de mail y cambiarle fecha fin al tiempo extra configurado
     await sendGoodbyeEmail({ to: userTokenReservation!.client! });
