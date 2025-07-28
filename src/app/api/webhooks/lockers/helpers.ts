@@ -1,7 +1,6 @@
 import { TokenRequestCreationBody, TokenRequestEditionBody } from "./types";
 import sendgrid from "@sendgrid/mail";
 import { Html, render } from "@react-email/components";
-import QRCode from "qrcode";
 import { env } from "~/env";
 
 const base_url = "https://testing.server.dcm.com.ar/api/v2/token";
@@ -49,7 +48,11 @@ export async function sendPackageDeliveredEmail({
   checkoutTime: string;
   userToken: string;
 }) {
-  const qrCode = await QRCode.toDataURL(userToken);
+  var QRCode = require("qrcode");
+  // Generar data URL del QR
+  const dataUrl: string = await QRCode.toDataURL(userToken, { type: "png" });
+  // Extraer solo el Base64 (sin el prefijo "data:image/png;base64,")
+  const base64 = dataUrl.split(";base64,").pop()!;
   const fechaFin = checkoutTime.split("T")[0];
   const horaFin = checkoutTime.split("T")[1];
   sendgrid.setApiKey(env.SENDGRID_API_KEY);
@@ -70,10 +73,11 @@ export async function sendPackageDeliveredEmail({
 			</body>`,
     attachments: [
       {
-        filename: `${userToken}.png`,
-        content: qrCode,
+        filename: `QR_${userToken}.png`,
+        content: base64,
         type: "image/png",
         disposition: "attachment",
+        contentId: "qr_code_delivery",
       },
     ],
   };
