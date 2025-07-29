@@ -35,9 +35,11 @@ export async function POST(request: NextRequest) {
 }
 
 async function tokenUseResponseHandler(webhook: LockerWebhook) {
+
   const webhookData: TokenUseResponseData = JSON.parse(
     webhook.data as unknown as string,
   );
+  console.log(webhookData)
 
   if (webhookData.Respuesta === "Rechazado")
     return NextResponse.json({ status: 200 });
