@@ -55,14 +55,14 @@ export default function CitySelector({ t, ...props }: {
                     <CardHeader>
                       <CardTitle> {city.name}</CardTitle>
                       <CardDescription>
-                        {t("selectCity")}
+                        {city.description}
                       </CardDescription>
                     </CardHeader>
                     <img
                       className="aspect-video object-cover"
                       src={city.image ? city.image : "/placeholder.svg"}
                     ></img>
-                  </Card> 
+                  </Card>
                 </div>
               );
             })}
