@@ -68,7 +68,7 @@ export const stores = sqliteTable(
     address: text("address", { length: 255 }),
     organizationName: text("organizationName", { length: 255 }),
     description: text("description", { length: 255 }),
-    firstTokenUseTime: integer("first_token_use_time").default(15)
+    firstTokenUseTime: integer("first_token_use_time").default(15),
     entidadId: text("entidadId")
       .references(() => companies.id, { onDelete: "cascade" }),
   },
