@@ -43,7 +43,7 @@ export default function LockerOcupationPage() {
       startDate,
       endDate,
       filterSerie: lockersSerie,
-      filterEntities: entidadesFiltro,
+      filterEntities: entidadesFiltro && entidadesFiltro.length > 0 ? entidadesFiltro : null,
     });
 
   const { data: ocupationData } =
@@ -51,7 +51,7 @@ export default function LockerOcupationPage() {
       startDate,
       endDate,
       filterSerie: lockersSerie,
-      filterEntities: entidadesFiltro,
+      filterEntities: entidadesFiltro && entidadesFiltro.length > 0 ? entidadesFiltro : null,
     });
   
   const { data: sizes } = api.reports.getSizes.useQuery();
@@ -59,7 +59,7 @@ export default function LockerOcupationPage() {
     api.transaction.getTransactionsByDate.useQuery({
       startDate,
       endDate,
-      filterEntities: entidadesFiltro,
+      filterEntities: entidadesFiltro && entidadesFiltro.length > 0 ? entidadesFiltro : null,
     });
 
   const { data: capacityBySize } =
@@ -67,7 +67,7 @@ export default function LockerOcupationPage() {
       startDate,
       endDate,
       filterSerie: lockersSerie,
-      filterEntities: entidadesFiltro,
+      filterEntities: entidadesFiltro && entidadesFiltro.length > 0 ? entidadesFiltro : null,
     });
 
   const applyDateFilter = () => {

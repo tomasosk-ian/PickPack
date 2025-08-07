@@ -88,7 +88,16 @@ export const reportsRouter = createTRPCRouter({
       return occupationData;
     }),
 
-  getTotalBoxesAmountPerSize: protectedProcedure.query(async ({ ctx }) => {
+  getTotalBoxesAmountPerSize: protectedProcedure
+    .input(
+      z.object({
+        startDate: z.string(),
+        endDate: z.string(),
+        filterSerie: z.array(z.string()).nullable(),
+        filterEntities: z.array(z.string()).nullable(),
+      }),
+    )
+  .query(async ({ ctx, input }) => {
     if (!ctx.orgId) {
       throw new TRPCError({ code: 'BAD_REQUEST', message: "Sin entidad" });
     }
@@ -119,12 +128,44 @@ export const reportsRouter = createTRPCRouter({
     // Agrupa todos los lockers por tamaño
     const boxCountsBySize: { [sizeName: string]: number } = {};
 
-    validatedData.data.forEach((locker) => {
+    for (const locker of validatedData.data) {
+      if (Array.isArray(input.filterSerie)) {
+        if (!input.filterSerie.includes(locker.nroSerieLocker)) {
+          continue;
+        }
+      }
+
+      if (Array.isArray(input.filterEntities)) {
+        if (input.filterEntities.length === 0) {
+          continue;
+        }
+
+        const lockerEntity = await db.query.storesLockers.findFirst({
+          where: (table, { and, eq, exists, inArray }) => and(
+            eq(table.serieLocker, locker.nroSerieLocker),
+            exists(
+              db.select()
+                .from(schema.stores)
+                .where(
+                  and(
+                    eq(schema.stores.identifier, table.storeId),
+                    inArray(schema.stores.entidadId, input.filterEntities ?? []),
+                  )
+                )
+            )
+          )
+        });
+
+        if (!lockerEntity) {
+          continue;
+        }
+      }
+
       locker.boxes.forEach((box) => {
         const sizeName = box.idSizeNavigation?.nombre || "Unknown";
         boxCountsBySize[sizeName] = (boxCountsBySize[sizeName] || 0) + 1;
       });
-    });
+    }
 
     return boxCountsBySize;
   }),
