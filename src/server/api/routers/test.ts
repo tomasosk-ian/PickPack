@@ -1,10 +1,11 @@
 import { db, schema } from "~/server/db";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { and, eq, isNull } from "drizzle-orm";
-import { trpcTienePermisoCtx } from "~/lib/roles";
+import { serverUserPerms } from "~/lib/roles";
 import { PERMISO_ADMIN } from "~/lib/permisos";
 import { PrivateConfigKeys } from "~/lib/config";
 import { env } from "~/env";
+import { TRPCError } from "@trpc/server";
 
 // esfuerzo dudoso de no repetir ejecuciones de migraciones
 let lastMigration = 0;
@@ -12,7 +13,10 @@ let lastMigration = 0;
 export const testRouter = createTRPCRouter({
   migrateToEntities: protectedProcedure
     .mutation(async ({ ctx }) => {
-      await trpcTienePermisoCtx(ctx, PERMISO_ADMIN);
+      const perms = await serverUserPerms(ctx.userId, null);
+      if (!perms.perms.has(PERMISO_ADMIN)) {
+        throw new TRPCError({ code: 'UNAUTHORIZED', message: "Sin permiso" });
+      }
       
       if (Date.now() - lastMigration > 60000 * 60) {
         lastMigration = Date.now();
