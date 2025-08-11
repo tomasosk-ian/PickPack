@@ -35,6 +35,10 @@ export async function POST(request: NextRequest) {
 }
 
 async function tokenUseResponseHandler(webhook: LockerWebhook) {
+  if (!bearer_token) {
+    console.error("!bearer_token, falta env.TOKEN_EMPRESA");
+    return NextResponse.json({ status: 500 });
+  }
 
   const webhookData: TokenUseResponseData = JSON.parse(
     webhook.data as unknown as string,

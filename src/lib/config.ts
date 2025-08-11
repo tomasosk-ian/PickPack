@@ -1,7 +1,8 @@
 export const PublicConfigClaves = {
   "metodo_pago": "Configuración de método de pago",
   "mercadopago_public_key": "Clave pública de Mercado Pago",
-  "reserve_from_now": "Reservas desde ahora"
+  "reserve_from_now": "Reservas desde ahora",
+  "tyc_link": "URL a Términos y Condiciones",
 }
 
 export enum PublicConfigMetodoPago {
