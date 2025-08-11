@@ -15,6 +15,9 @@ import { env } from "~/env";
 import { lockerValidator } from "./lockers";
 import { Input } from "~/components/ui/input";
 import { getClientByEmail } from "./lockerReserveRouter";
+import { TRPCError } from "@trpc/server";
+import { trpcTienePermisoCtx } from "~/lib/roles";
+import { PrivateConfigKeys } from "~/lib/config";
 
 export type Reserve = {
   identifier: string | null;
@@ -37,13 +40,20 @@ export type GroupedReserves = {
 };
 
 export const reserveRouter = createTRPCRouter({
-  get: publicProcedure.query(async ({ ctx }) => {
-    checkBoxAssigned();
+  get: protectedProcedure.query(async ({ ctx }) => {
+    await trpcTienePermisoCtx(ctx, "panel:reservas");
+
+    checkBoxAssigned(ctx.orgId ?? "");
     const result = await ctx.db.query.reservas.findMany({
       with: { clients: true },
       where: (reservas) =>
-        and(isNotNull(reservas.nReserve), isNotNull(reservas.Token1)),
+        and(
+          isNotNull(reservas.nReserve),
+          isNotNull(reservas.Token1),
+          eq(schema.reservas.entidadId, ctx.orgId ?? "")
+        ),
     });
+
     const groupedByNReserve = result.reduce((acc: any, reserva) => {
       const nReserve = reserva.nReserve!;
       if (!acc[nReserve]) {
@@ -55,50 +65,17 @@ export const reserveRouter = createTRPCRouter({
     return groupedByNReserve;
   }),
 
-  // getActive: publicProcedure.query(async ({ ctx }) => {
-  //   checkBoxAssigned();
-
-  //   const result = await db.query.reservas.findMany({
-  //     where: (reservas) =>
-  //       and(isNotNull(reservas.nReserve), isNotNull(reservas.Token1)),
-  //     with: { clients: true },
-  //   });
-
-  //   const now = new Date();
-  //   const startOfDay = new Date(
-  //     now.getFullYear(),
-  //     now.getMonth(),
-  //     now.getDate(),
-  //   );
-  //   const endOfDay = new Date(
-  //     now.getFullYear(),
-  //     now.getMonth(),
-  //     now.getDate() + 1,
-  //   );
-
-  //   const actives = result.filter(
-  //     (x) =>
-  //       new Date(x.FechaFin!).getTime() >= startOfDay.getTime() &&
-  //       new Date(x.FechaFin!).getTime() < endOfDay.getTime(),
-  //   );
-
-  //   const groupedByNReserve = actives.reduce((acc: any, reserva) => {
-  //     const nReserve = reserva.nReserve!;
-  //     if (!acc[nReserve]) {
-  //       acc[nReserve] = [];
-  //     }
-  //     acc[nReserve].push(reserva);
-  //     return acc;
-  //   }, {});
-
-  //   return groupedByNReserve;
-  // }),
-  getActive: publicProcedure.query(async ({ ctx }) => {
-    checkBoxAssigned();
+  getActive: protectedProcedure.query(async ({ ctx }) => {
+    await trpcTienePermisoCtx(ctx, "panel:reservas");
+    checkBoxAssigned(ctx.orgId ?? "");
 
     const result = await db.query.reservas.findMany({
       where: (reservas) =>
-        and(isNotNull(reservas.nReserve), isNotNull(reservas.Token1)),
+        and(
+          isNotNull(reservas.nReserve),
+          isNotNull(reservas.Token1),
+          eq(schema.reservas.entidadId, ctx.orgId ?? "")
+        ),
       with: { clients: true },
     });
 
@@ -125,22 +102,25 @@ export const reserveRouter = createTRPCRouter({
     return groupedByNReserve;
   }),
 
-  getBynReserve: publicProcedure
+  getBynReserve: protectedProcedure
     .input(
       z.object({
         nReserve: z.number(),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      await trpcTienePermisoCtx(ctx, "panel:reservas");
+
       // Evita llamadas innecesarias si `nReserve` es inválido
       if (!input.nReserve) throw new Error("Invalid nReserve");
-      checkBoxAssigned();
+      checkBoxAssigned(ctx.orgId ?? "");
 
       // Consulta optimizada
       const reserve = await db.query.reservas.findMany({
         where: (reservas) =>
           and(
             eq(schema.reservas.nReserve, input.nReserve),
+            eq(schema.reservas.entidadId, ctx.orgId ?? ""),
             isNotNull(reservas.Token1),
           ),
         with: { clients: true },
@@ -155,16 +135,18 @@ export const reserveRouter = createTRPCRouter({
     .input(
       z.object({
         idTransactions: z.array(z.number()),
+        entityId: z.string().min(1),
       }),
     )
     .mutation(async ({ input }) => {
-      checkBoxAssigned();
+      checkBoxAssigned(input.entityId);
 
       // Consulta optimizada
       const reserve = await db.query.reservas.findMany({
         where: (reservas) =>
           and(
             inArray(schema.reservas.IdTransaction, input.idTransactions),
+            eq(schema.reservas.entidadId, input.entityId),
             isNotNull(reservas.Token1),
           ),
         with: { clients: true },
@@ -180,10 +162,11 @@ export const reserveRouter = createTRPCRouter({
       z.object({
         token: z.number(),
         email: z.string(),
+        entityId: z.string().min(1),
       }),
     )
     .query(async ({ input }) => {
-      checkBoxAssigned();
+      checkBoxAssigned(input.entityId);
 
       const reserve = await db.query.reservas.findFirst({
         where: (reservas) =>
@@ -191,6 +174,7 @@ export const reserveRouter = createTRPCRouter({
             isNotNull(reservas.nReserve),
             eq(schema.reservas.Token1, input.token),
             eq(schema.reservas.client, input.email),
+            eq(schema.reservas.entidadId, input.entityId),
           ),
         orderBy: (reservas, { desc }) => [desc(reservas.FechaCreacion)],
 
@@ -198,21 +182,26 @@ export const reserveRouter = createTRPCRouter({
       });
       return reserve as Reserve;
     }),
-  getByClient: publicProcedure
+  getByClient: protectedProcedure
     .input(
       z.object({
         clientId: z.number(),
       }),
     )
     .query(async ({ input, ctx }) => {
-      checkBoxAssigned();
+      await trpcTienePermisoCtx(ctx, "panel:clientes");
+      
+      checkBoxAssigned(ctx.orgId ?? "");
       const result = await ctx.db.query.reservas.findMany({
         with: { clients: true },
         where: (reservas) =>
           and(isNotNull(reservas.nReserve), isNotNull(reservas.Token1)),
       });
       const client = await db.query.clients.findFirst({
-        where: eq(schema.clients.identifier, input.clientId),
+        where: and(
+          eq(schema.clients.identifier, input.clientId),
+          eq(schema.clients.entidadId, ctx.orgId ?? ""),
+        ),
       });
       const groupedByNReserve = result.reduce((acc: any, reserva) => {
         const nReserve = reserva.nReserve!;
@@ -227,22 +216,25 @@ export const reserveRouter = createTRPCRouter({
       }, {});
       return groupedByNReserve;
     }),
-  list: publicProcedure.query(async ({ ctx }) => {
-    checkBoxAssigned();
-
-    const result = ctx.db.query.reservas.findMany({
-      orderBy: (reservas, { desc }) => [desc(reservas.FechaCreacion)],
-      with: { clients: true },
-    });
-    return result;
-  }),
   reservesToClients: publicProcedure
     .input(
       z.object({
         clientId: z.number(),
+        entityId: z.string().min(1),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const cl = await db.query.clients.findFirst({
+        where: and(
+          eq(schema.clients.identifier, input.clientId),
+          eq(schema.clients.entidadId, input.entityId)
+        )
+      });
+
+      if (!cl) {
+        throw new TRPCError({ code: 'NOT_FOUND' });
+      }
+
       const result = await db
         .insert(schema.reservasToClients)
         .values({
@@ -252,10 +244,7 @@ export const reserveRouter = createTRPCRouter({
 
       return result[0]?.identifier;
     }),
-  getReservesToClients: publicProcedure.query(async () => {
-    const result = db.query.reservas.findMany();
-    return result;
-  }),
+
   create: publicProcedure
     .input(
       z.object({
@@ -276,10 +265,11 @@ export const reserveRouter = createTRPCRouter({
         client: z.string().nullable().optional(),
         identifier: z.string().nullable().optional(),
         nReserve: z.number().optional(),
+        entityId: z.string().min(1),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const client = await getClientByEmail(input.client!);
+      const client = await getClientByEmail(input.client!, input.entityId);
       const identifier = createId();
 
       await db.insert(schema.reservas).values({
@@ -299,9 +289,10 @@ export const reserveRouter = createTRPCRouter({
         IdTransaction: input.IdTransaction,
         client: client?.email,
         nReserve: input.nReserve,
+        entidadId: input.entityId,
       });
     }),
-  updateReserve: publicProcedure
+  updateReserve: protectedProcedure
     .input(
       z.object({
         identifier: z.string(),
@@ -310,30 +301,42 @@ export const reserveRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await trpcTienePermisoCtx(ctx, "panel:reservas");
+
       const response = await db
         .update(reservas)
         .set({ FechaFin: input.FechaFin, FechaInicio: input.FechaInicio })
-        .where(eq(reservas.identifier, input.identifier))
+        .where(and(
+          eq(reservas.identifier, input.identifier),
+          eq(reservas.entidadId, ctx.orgId ?? ""),
+        ))
         .returning();
       return response[0] as Reserve;
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(
       z.object({
         nReserve: z.number(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await trpcTienePermisoCtx(ctx, "panel:reservas");
       await db
         .delete(schema.reservas)
-        .where(eq(schema.reservas.nReserve, input.nReserve));
+        .where(and(
+          eq(schema.reservas.nReserve, input.nReserve),
+          eq(reservas.entidadId, ctx.orgId ?? ""),
+        ));
     }),
-  getLastReserveByBox: publicProcedure.query(async ({ ctx }) => {
+  getLastReserveByBox: protectedProcedure.query(async ({ ctx }) => {
     // Obtener las reservas ordenadas por FechaFin descendente
     const reservas = await ctx.db.query.reservas.findMany({
       with: { clients: true },
-      where: (reservas) => isNotNull(reservas.IdBox),
+      where: (reservas) => and(
+        isNotNull(reservas.IdBox),
+        eq(reservas.entidadId, ctx.orgId ?? ""),
+      ),
       orderBy: (reservas, { desc }) => [desc(reservas.FechaFin)],
       // limit: 1, // Si solo necesitas la última reserva por IdBox, usa limit aquí.
     });
@@ -353,57 +356,28 @@ export const reserveRouter = createTRPCRouter({
 
 export type Reserves = RouterOutputs["reserve"]["getBynReserve"][number];
 
-// export async function checkBoxAssigned() {
-//   const locerResponse = await fetch(
-//     `${env.SERVER_URL}/api/locker/byTokenEmpresa/${env.TOKEN_EMPRESA}`,
-//   );
-//   const reservedBoxData = await locerResponse.json();
-//   if (!locerResponse.ok) {
-//     const errorResponse = reservedBoxData;
-//     return { error: errorResponse.message || "Unknown error" };
-//   }
-//   // Validate the response data against the lockerValidator schema
-//   const validatedData = z.array(lockerValidator).safeParse(reservedBoxData);
-//   if (!validatedData.success) {
-//     throw null; // Handle the case where the data is invalid
-//   }
-//   // Process lockers and tokens
-//   validatedData.data.map(async (locker) => {
-//     locker.tokens?.map(async (token) => {
-//       if (token.idBox != null) {
-//         const idFisico = locker.boxes.find(
-//           (box) => box.id == token.idBox,
-//         )?.idFisico;
-//         // Validar el token antes de usarlo en la base de datos
-//         const token1Value = parseInt(token.token1 ?? "0");
-//         if (!Number.isFinite(token1Value)) {
-//           console.error(`Valor de token1 no válido: ${token.token1}`);
-//           return; // No continuar si el valor no es válido
-//         }
-//         // Solo ejecutar la consulta si el token es válido
-//         db.update(schema.reservas)
-//           .set({ IdFisico: idFisico, IdBox: token.idBox })
-//           .where(
-//             and(
-//               eq(schema.reservas.Token1!, token1Value),
-//               isNull(schema.reservas.IdBox),
-//               isNull(schema.reservas.IdFisico),
-//             ),
-//           );
-//       }
-//     });
-//   });
-//   //fin check
-// }
 
 /**
  * Función para verificar y asignar lockers a partir de un API y procesar las actualizaciones correspondientes en la base de datos.
  */
-export async function checkBoxAssigned() {
+export async function checkBoxAssigned(entityId: string) {
+  const tk: PrivateConfigKeys = 'token_empresa';
+  const tkValue = await db.query.privateConfig.findFirst({
+    where: and(
+      eq(schema.privateConfig.key, tk),
+      eq(schema.privateConfig.entidadId, entityId)
+    )
+  });
+
+  if (!tkValue) {
+    throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: "Sin token de empresa" });
+  }
+  
   // Realiza una solicitud a la API para obtener los datos de lockers asignados por empresa.
   const locerResponse = await fetch(
     `${env.SERVER_URL}/api/locker/byTokenEmpresa/${env.TOKEN_EMPRESA}`,
   );
+
   const reservedBoxData = await locerResponse.json();
 
   // Verifica si la respuesta de la API fue exitosa

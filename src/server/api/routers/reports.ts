@@ -1,9 +1,11 @@
 import { and, gte, lte, isNotNull, eq } from "drizzle-orm";
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { db, schema } from "~/server/db";
 import { env } from "~/env";
 import { lockerValidator } from "./lockers";
+import { TRPCError } from "@trpc/server";
+import { PrivateConfigKeys } from "~/lib/config";
 
 export type DailyOccupation = {
   day: string; // Format "day/month"
@@ -47,12 +49,13 @@ type SizeMap = {
 };
 
 export const reportsRouter = createTRPCRouter({
-  getOcupattion: publicProcedure
+  getOcupattion: protectedProcedure
     .input(
       z.object({
         startDate: z.string(),
         endDate: z.string(),
-        filterSerie: z.array(z.string()).nullable()
+        filterSerie: z.array(z.string()).nullable(),
+        filterEntities: z.array(z.string()).nullable(),
       }),
     )
     .query(async ({ input }) => {
@@ -74,15 +77,45 @@ export const reportsRouter = createTRPCRouter({
         reserves = reserves.filter(v => validSeries.has(v.NroSerie ?? ""));
       }
 
-      const sizeMap = await getSizesMap();
+      if (Array.isArray(input.filterEntities)) {
+        const validEnts = new Set(input.filterEntities);
+        reserves = reserves.filter(v => validEnts.has(v.entidadId ?? ""));
+      }
+
+      const sizeMap = await getSizesMap(input.filterEntities);
       const occupationData = groupOccupationDataByDay(reserves, sizeMap);
 
       return occupationData;
     }),
 
-  getTotalBoxesAmountPerSize: publicProcedure.query(async () => {
+  getTotalBoxesAmountPerSize: protectedProcedure
+    .input(
+      z.object({
+        startDate: z.string(),
+        endDate: z.string(),
+        filterSerie: z.array(z.string()).nullable(),
+        filterEntities: z.array(z.string()).nullable(),
+      }),
+    )
+  .query(async ({ ctx, input }) => {
+    if (!ctx.orgId) {
+      throw new TRPCError({ code: 'BAD_REQUEST', message: "Sin entidad" });
+    }
+
+    const tk: PrivateConfigKeys = 'token_empresa';
+    const tkValue = await db.query.privateConfig.findFirst({
+      where: and(
+        eq(schema.privateConfig.key, tk),
+        eq(schema.privateConfig.entidadId, ctx.orgId)
+      )
+    });
+
+    if (!tkValue) {
+      throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: "Sin token de empresa" });
+    }
+
     const locerResponse = await fetch(
-      `${env.SERVER_URL}/api/locker/byTokenEmpresa/${env.TOKEN_EMPRESA}`,
+      `${env.SERVER_URL}/api/locker/byTokenEmpresa/${tkValue.value}`,
     );
 
     const reservedBoxData = await locerResponse.json();
@@ -95,27 +128,63 @@ export const reportsRouter = createTRPCRouter({
     // Agrupa todos los lockers por tamaño
     const boxCountsBySize: { [sizeName: string]: number } = {};
 
-    validatedData.data.forEach((locker) => {
+    for (const locker of validatedData.data) {
+      if (Array.isArray(input.filterSerie)) {
+        if (!input.filterSerie.includes(locker.nroSerieLocker)) {
+          continue;
+        }
+      }
+
+      if (Array.isArray(input.filterEntities)) {
+        if (input.filterEntities.length === 0) {
+          continue;
+        }
+
+        const lockerEntity = await db.query.storesLockers.findFirst({
+          where: (table, { and, eq, exists, inArray }) => and(
+            eq(table.serieLocker, locker.nroSerieLocker),
+            exists(
+              db.select()
+                .from(schema.stores)
+                .where(
+                  and(
+                    eq(schema.stores.identifier, table.storeId),
+                    inArray(schema.stores.entidadId, input.filterEntities ?? []),
+                  )
+                )
+            )
+          )
+        });
+
+        if (!lockerEntity) {
+          continue;
+        }
+      }
+
       locker.boxes.forEach((box) => {
         const sizeName = box.idSizeNavigation?.nombre || "Unknown";
         boxCountsBySize[sizeName] = (boxCountsBySize[sizeName] || 0) + 1;
       });
-    });
+    }
 
     return boxCountsBySize;
   }),
 
-  getSizes: publicProcedure.query(async () => {
-    const sizesData = await db.query.sizes.findMany();
+  getSizes: protectedProcedure.query(async ({ ctx }) => {
+    const sizesData = await db.query.sizes.findMany({
+      where: eq(schema.sizes.entidadId, ctx.orgId ?? "")
+    });
+
     return sizesData;
   }),
 
-  getAverageReservationDuration: publicProcedure
+  getAverageReservationDuration: protectedProcedure
     .input(
       z.object({
         startDate: z.string(),
         endDate: z.string(),
-        filterSerie: z.array(z.string()).nullable()
+        filterSerie: z.array(z.string()).nullable(),
+        filterEntities: z.array(z.string()).nullable(),
       }),
     )
     .query(async ({ input }) => {
@@ -129,12 +198,18 @@ export const reportsRouter = createTRPCRouter({
             lte(reserva.FechaFin, endDate),
             isNotNull(reserva.FechaInicio),
             isNotNull(reserva.FechaFin),
+            isNotNull(reserva.nReserve),
           ),
       });
 
       if (Array.isArray(input.filterSerie)) {
         const validSeries = new Set(input.filterSerie);
         reserves = reserves.filter(v => validSeries.has(v.NroSerie ?? ""));
+      }
+
+      if (Array.isArray(input.filterEntities)) {
+        const validEnts = new Set(input.filterEntities);
+        reserves = reserves.filter(v => validEnts.has(v.entidadId ?? ""));
       }
 
       // Calculate the duration of each reservation in days and accumulate data by duration
@@ -176,8 +251,12 @@ export const reportsRouter = createTRPCRouter({
 
 // Helper functions
 
-async function getSizesMap(): Promise<SizeMap> {
-  const sizesData = await db.query.sizes.findMany();
+async function getSizesMap(entitiesFilter: string[] | null): Promise<SizeMap> {
+  let sizesData = await db.query.sizes.findMany();
+  if (entitiesFilter) {
+    sizesData = sizesData.filter(v => entitiesFilter.some(k => k === v.entidadId));
+  }
+  
   const sizeMap: { [id: number]: string } = {};
 
   sizesData.forEach((size) => {

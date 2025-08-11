@@ -19,9 +19,11 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { api } from "~/trpc/react";
 import { Cupon } from "~/server/api/routers/cupones";
 import type { Translations } from "~/translations";
+import { Store } from "~/server/api/routers/store";
 
 export default function UserForm({ t, ...props }: {
   client: Client;
+  store: Store | null;
   setClient: (client: Client) => void;
   setCupon: ((cupon: Cupon) => void) | null;
   errors: {
@@ -74,9 +76,11 @@ export default function UserForm({ t, ...props }: {
     if (props.setErrors && props.errors)
       props.setErrors({ ...props.errors, [name]: "" });
   };
+
   function applyDiscount() {
     const response = useCupon({
       codigo: discountCode,
+      entityId: props.store?.entidadId ?? props.client.entidadId ?? "",
     }).then((cupon) => {
       if (cupon) {
         if (props.setCupon) props.setCupon(cupon);
@@ -84,6 +88,7 @@ export default function UserForm({ t, ...props }: {
       }
     });
   }
+
   if (!props.client) return <div>{t("loading")}</div>;
   return (
     <div className="grid grid-cols-1 gap-4 rounded-lg bg-[#F0F0F0] p-6 shadow-md md:grid-cols-12 md:px-3 md:py-6">

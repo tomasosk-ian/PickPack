@@ -1,4 +1,5 @@
-import { eq } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
+import { and, eq } from "drizzle-orm";
 import { mobbex } from "mobbex";
 import { env } from "process";
 import { z } from "zod";
@@ -9,7 +10,7 @@ import {
   protectedProcedure,
   publicProcedure,
 } from "~/server/api/trpc";
-import { schema } from "~/server/db";
+import { db, schema } from "~/server/db";
 
 export const mobbexRouter = createTRPCRouter({
   test: publicProcedure
@@ -23,9 +24,18 @@ export const mobbexRouter = createTRPCRouter({
         name: z.string(),
         identification: z.string(),
         cantidad: z.number(),
+        entityId: z.string().min(1),
       }),
     )
     .mutation(async ({ input, ctx }) => {
+      const ent = await db.query.companies.findFirst({
+        where: eq(schema.companies.id, input.entityId)
+      });
+
+      if (!ent) {
+        throw new TRPCError({ code: 'NOT_FOUND' });
+      }
+
       const timeOutResult = await fetch(
         `${env.SERVER_URL}/api/token/GetTimeDeleter`,
       );
@@ -39,11 +49,17 @@ export const mobbexRouter = createTRPCRouter({
       const configMobbexAccessToken: PrivateConfigKeys = "mobbex_access_token";
 
       const mobbexApiKey = await ctx.db.query.privateConfig.findFirst({
-        where: eq(schema.privateConfig.key, configMobbexApiKey),
+        where: and(
+          eq(schema.privateConfig.key, configMobbexApiKey),
+          eq(schema.privateConfig.entidadId, input.entityId),
+        ),
       });
 
       const mobbexAccessToken = await ctx.db.query.privateConfig.findFirst({
-        where: eq(schema.privateConfig.key, configMobbexAccessToken),
+        where: and(
+          eq(schema.privateConfig.key, configMobbexAccessToken),
+          eq(schema.privateConfig.entidadId, input.entityId),
+        ),
       });
 
       if (!mobbexApiKey) {

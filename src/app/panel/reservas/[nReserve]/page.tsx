@@ -12,7 +12,10 @@ export default async function Reserve(props: { params: { nReserve: string } }) {
   const stores = await api.store.get.query();
   const store = stores.find((s) => s.lockers.some(l => l.serieLocker == reserve[0]!.NroSerie!))!
 
-  const sizes = await api.size.get.query({});
+  const sizes = await api.size.getProt.query({
+    store: null
+  });
+
   const transaction = await api.transaction.getBynroReserve.query({
     nReserve: reserve[0]!.nReserve!,
   });

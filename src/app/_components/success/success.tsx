@@ -31,7 +31,7 @@ export default function Success({ t, ...props }: {
   const targetRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
 
-  const { data: plazoReserva } = api.config.getKey.useQuery({ key: "reserve_from_now" });
+  const { data: plazoReserva } = api.config.getKey.useQuery({ key: "reserve_from_now", entityId: props.store.entidadId ?? "" });
   const isReserveModeNow = useMemo(() => (plazoReserva?.value.trim().toLowerCase() ?? "false") === "true", [plazoReserva]);
 
   const [failedToShareNative, setFailedToShareNative] = useState(false);
@@ -79,7 +79,7 @@ export default function Success({ t, ...props }: {
       return;
     }
 
-    let message = `${t("shareWhatsappHeader")}\n${t("nReserve")}: ${props.nReserve}`;
+    let message = `${t("shareWhatsappHeader")}\n${t("nReserve")}: ${props.nReserve}\n${t("local")}: ${props.store.name}`;
     for (const r of props.reserves) {
       message += `\n${t("token")} (${getSize(r.IdSize!)}): ${r.Token1}`;
     }

@@ -1,9 +1,11 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { env } from "~/env";
 import { db, schema } from "~/server/db";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { checkBoxAssigned } from "./reserves";
+import { TRPCError } from "@trpc/server";
+import { PrivateConfigKeys } from "~/lib/config";
 
 export const tokenValidator = z.object({
   id: z.number().nullable().optional(),
@@ -73,10 +75,27 @@ export type Boxes = z.infer<typeof boxesValidator>;
 export type Token = z.infer<typeof tokenValidator>;
 
 export const lockerRouter = createTRPCRouter({
-  get: publicProcedure.query(async ({ ctx }) => {
+  get: protectedProcedure.query(async ({ ctx }) => {
+    if (!ctx.orgId) {
+      throw new TRPCError({ code: 'BAD_REQUEST', message: "Sin entidad" });
+    }
+
+    const tk: PrivateConfigKeys = 'token_empresa';
+    const tkValue = await db.query.privateConfig.findFirst({
+      where: and(
+        eq(schema.privateConfig.key, tk),
+        eq(schema.privateConfig.entidadId, ctx.orgId)
+      )
+    });
+
+    if (!tkValue) {
+      throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: "Sin token de empresa" });
+    }
+
     const locerResponse = await fetch(
-      `${env.SERVER_URL}/api/locker/byTokenEmpresa/${env.TOKEN_EMPRESA}`,
+      `${env.SERVER_URL}/api/locker/byTokenEmpresa/${tkValue.value}`,
     );
+
     if (!locerResponse.ok) {
       const errorResponse = await locerResponse.json();
       return { error: errorResponse.message || "Unknown error" };
@@ -91,8 +110,8 @@ export const lockerRouter = createTRPCRouter({
 
       throw null;
     }
-    await checkBoxAssigned();
-    console.log("validatedData.data", validatedData.data);
+
+    await checkBoxAssigned(ctx.orgId);
 
     return validatedData.data;
   }),

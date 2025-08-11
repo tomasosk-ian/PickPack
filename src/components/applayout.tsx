@@ -1,8 +1,7 @@
 import { MenuIcon } from "lucide-react";
 import { Button } from "./ui/button";
 import { SidenavSheet } from "./sidenav-sheet";
-import { OrganizationSwitcher, UserButton } from "@clerk/nextjs";
-import { checkRole } from "~/lib/roles";
+import { UserButton } from "@clerk/nextjs";
 
 export type AppLayoutProps = {
   children: React.ReactNode;

@@ -6,32 +6,17 @@ import { db, schema } from "~/server/db";
 import { and, eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
-export const getClientByEmail = async (email: string) => {
+export const getClientByEmail = async (email: string, entity: string) => {
   const client = await db.query.clients.findFirst({
-    where: eq(schema.clients.email, email),
+    where: and(
+      eq(schema.clients.email, email),
+      eq(schema.clients.entidadId, entity),
+    ),
   });
   return client;
 };
 
 export const lockerReserveRouter = createTRPCRouter({
-  get: publicProcedure
-    .input(
-      z.object({
-        clientId: z.number().optional(),
-      }),
-    )
-    .query(async ({ input }) => {
-      const client = await db.query.clients.findFirst({
-        where: eq(schema.clients.identifier, input.clientId!),
-      });
-      const reserves = await db.query.reservas.findMany({
-        orderBy: (reserva, { desc }) => [desc(reserva.identifier)],
-        where: eq(schema.reservas.client, client?.email!),
-      });
-
-      return reserves;
-    }),
-
   reserveBox: publicProcedure
     .input(
       z.object({
@@ -51,9 +36,18 @@ export const lockerReserveRouter = createTRPCRouter({
         client: z.string().nullable().optional(),
         identifier: z.string().nullable().optional(),
         nReserve: z.number().optional(),
+        entityId: z.string().min(1),
       }),
     )
     .mutation(async ({ input }) => {
+      const ent = await db.query.companies.findFirst({
+        where: eq(schema.companies.id, input.entityId)
+      });
+
+      if (!ent) {
+        throw new TRPCError({ code: 'NOT_FOUND' });
+      }
+
       const reservationResponse = await fetch(
         `${env.SERVER_URL}/api/token/reservar/${input.NroSerie}`,
         {
@@ -78,7 +72,7 @@ export const lockerReserveRouter = createTRPCRouter({
 
       const reservedBoxData = await reservationResponse.json();
 
-      const client = await getClientByEmail(input.client!);
+      const client = await getClientByEmail(input.client!, ent.id);
       const identifier = createId();
       await db.insert(schema.reservas).values({
         identifier,
@@ -96,6 +90,7 @@ export const lockerReserveRouter = createTRPCRouter({
         IdTransaction: reservedBoxData,
         client: client?.email,
         nReserve: input.nReserve,
+        entidadId: ent.id,
       });
       return reservedBoxData;
     }),
@@ -105,11 +100,20 @@ export const lockerReserveRouter = createTRPCRouter({
       z.object({
         idToken: z.number(),
         nReserve: z.number(),
+        entityId: z.string().min(1),
         // isExt: z.boolean(),
         // newEndDate: z.string().optional(),
       }),
     )
     .mutation(async ({ input }) => {
+      const ent = await db.query.companies.findFirst({
+        where: eq(schema.companies.id, input.entityId)
+      });
+
+      if (!ent) {
+        throw new TRPCError({ code: 'NOT_FOUND' });
+      }
+
       // if (!input.isExt) {
       const reservationResponse = await fetch(
         `${env.SERVER_URL}/api/token/confirmar`,
@@ -143,7 +147,10 @@ export const lockerReserveRouter = createTRPCRouter({
       await db
         .update(schema.reservas)
         .set({ Token1: reservedBoxData, nReserve: input.nReserve })
-        .where(eq(schema.reservas.IdTransaction, input.idToken));
+        .where(and(
+          eq(schema.reservas.IdTransaction, input.idToken),
+          eq(schema.reservas.entidadId, ent.id),
+        ));
       return reservedBoxData;
       // }
       // else {

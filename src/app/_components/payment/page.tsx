@@ -64,8 +64,8 @@ export default function Payment({ t, ...props }: {
   const [transaction, setTransaction] = useState<Transaction>();
   const { mutateAsync: sendEmail } = api.email.sendEmail.useMutation();
   const { mutateAsync: mpPreferenceGet } = api.mp.getPreference.useMutation();
-  const { data: medioPagoRes } = api.config.getKey.useQuery({ key: 'metodo_pago' });
-  const { data: mpPublicKey } = api.config.getKey.useQuery({ key: 'mercadopago_public_key' });
+  const { data: medioPagoRes } = api.config.getKey.useQuery({ key: 'metodo_pago', entityId: props.store.entidadId ?? "" });
+  const { data: mpPublicKey } = api.config.getKey.useQuery({ key: 'mercadopago_public_key', entityId: props.store.entidadId ?? "" });
   const { mutateAsync: isPagadoMp } = api.mp.areReservesPaid.useMutation();
   const [medioConfigurado, setMedioConfigurado] = useState<PublicConfigMetodoPago | null>(null);
   const [mpClavePrimeraCarga, setMpClavePrimeraCarga] = useState<string | null>(null);
@@ -131,9 +131,11 @@ export default function Payment({ t, ...props }: {
                   n_reserve: props.nReserve,
                   store_address: props.store.address ?? "",
                   store_name: props.store.name,
-                  total: props.total
+                  total: props.total,
+                  entidad_id: props.store.entidadId ?? "",
                 },
                 href: window.location.href,
+                entityId: props.store.entidadId ?? "",
               });
 
               return res.preferenceId;
@@ -146,7 +148,8 @@ export default function Payment({ t, ...props }: {
 
         const interval = setInterval(() => {
           isPagadoMp({
-            IdTransactions: idTransactions
+            IdTransactions: idTransactions,
+            entityId: props.store.entidadId ?? "",
           }).then(e => {
             console.log('isPagadoMp', e);
             if (e) {
@@ -176,7 +179,8 @@ export default function Payment({ t, ...props }: {
   async function success() {
     if (medioConfigurado !== PublicConfigMetodoPago.mobbex) {
       const reserves = await getReserves({
-        idTransactions: idTransactions
+        idTransactions: idTransactions,
+        entityId: props.store.entidadId ?? "",
       });
 
       if (props.setReserves) {
@@ -205,6 +209,7 @@ export default function Payment({ t, ...props }: {
           let response = await confirmarBox({
             idToken: reserve.IdTransaction!,
             nReserve: props.nReserve,
+            entityId: props.store.entidadId ?? "",
           });
 
           if (response) {
@@ -231,6 +236,7 @@ export default function Payment({ t, ...props }: {
                 IdTransaction: reserve.IdTransaction,
                 Modo: reserve.Modo,
                 nReserve: props.nReserve,
+                entityId: props.store.entidadId ?? "",
               });
 
               if (props.setReserves) {
@@ -248,10 +254,11 @@ export default function Payment({ t, ...props }: {
               client: reserve.client,
               amount: props.total,
               nReserve: props.nReserve,
+              entityId: props.store.entidadId ?? "",
             });
 
             if (props.cupon) {
-              await useCupon({ identifier: props.cupon.identifier });
+              await useCupon({ identifier: props.cupon.identifier, entityId: props.store.entidadId ?? "", });
             }
           }
 

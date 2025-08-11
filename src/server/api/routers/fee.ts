@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { createId } from "~/lib/utils";
 
@@ -10,55 +10,94 @@ import {
 import { feeData, sizes } from "~/server/db/schema";
 import type { RouterOutputs } from "~/trpc/shared";
 import { db, schema } from "~/server/db";
+import { TRPCError } from "@trpc/server";
+import { trpcTienePermisoCtx } from "~/lib/roles";
+
+async function getFeesByStore(id: string, entityId: string) {
+  const ent = await db.query.companies.findFirst({
+    where: eq(schema.companies.id, entityId)
+  });
+
+  if (!ent) {
+    throw new TRPCError({ code: 'NOT_FOUND' });
+  }
+
+  const result = db.query.feeData.findMany({
+    where: and(
+      eq(schema.feeData.localId, id),
+      eq(schema.feeData.entidadId, ent.id),
+    ),
+    with: {
+      store: true,
+    },
+    orderBy: (feeData, { desc }) => [desc(feeData.identifier)],
+  });
+
+  return result;
+}
+
+async function getFeeById(id: string, entityId: string) {
+  const ent = await db.query.companies.findFirst({
+    where: eq(schema.companies.id, entityId)
+  });
+
+  if (!ent) {
+    throw new TRPCError({ code: 'NOT_FOUND' });
+  }
+
+  const channel = await db.query.feeData.findFirst({
+    where: and(
+      eq(schema.feeData.identifier, id),
+      eq(schema.feeData.entidadId, ent.id),
+    ),
+    with: {
+      store: true,
+    },
+  });
+
+  return channel;
+}
 
 export const feeRouter = createTRPCRouter({
   getByStore: publicProcedure
     .input(z.object({
-      id: z.string()
+      id: z.string(),
+      entityId: z.string().min(1),
     }))
-    .query(async ({ ctx, input }) => {
-      const result = ctx.db.query.feeData.findMany({
-        where: eq(schema.feeData.localId, input.id),
-        with: {
-          store: true,
-        },
-        orderBy: (feeData, { desc }) => [desc(feeData.identifier)],
-      });
-      return result;
+    .query(async ({ input }) => {
+      return await getFeesByStore(input.id, input.entityId);
     }),
+  getByStoreProt: protectedProcedure
+    .input(z.object({
+      id: z.string(),
+    }))
+    .query(async ({ input, ctx }) => {
+      await trpcTienePermisoCtx(ctx, "panel:locales");
+      return await getFeesByStore(input.id, ctx.orgId ?? "");
+    }),
+
   getById: publicProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        entityId: z.string().min(1),
+      }),
+    )
+    .query(async ({ input }) => {
+      return await getFeeById(input.id, input.entityId)
+    }),
+
+  getByIdProt: protectedProcedure
     .input(
       z.object({
         id: z.string(),
       }),
     )
-    .query(async ({ input }) => {
-      const channel = await db.query.feeData.findFirst({
-        where: eq(schema.feeData.identifier, input.id),
-        with: {
-          store: true,
-        },
-      });
-
-      return channel;
+    .query(async ({ input, ctx }) => {
+      return await getFeeById(input.id, ctx.orgId ?? "")
     }),
-  getBySize: publicProcedure
-    .input(
-      z.object({
-        idSize: z.number(),
-      }),
-    )
-    .query(async ({ input }) => {
-      const channel = await db.query.feeData.findFirst({
-        where: eq(schema.feeData.size, input.idSize),
-        with: {
-          store: true,
-        },
-      });
 
-      return channel;
-    }),
-  create: publicProcedure
+  create: protectedProcedure
     .input(
       z.object({
         description: z.string().min(0).max(1023).nullable().optional(),
@@ -70,7 +109,11 @@ export const feeRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // TODO: verificar permisos
+      await trpcTienePermisoCtx(ctx, "panel:locales");
+
+      if (!ctx.orgId) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: "Sin entidad" });
+      }
 
       const identifier = createId();
 
@@ -82,11 +125,12 @@ export const feeRouter = createTRPCRouter({
         size: input.size,
         discount: input.discount,
         localId: input.localId,
+        entidadId: ctx.orgId,
       });
 
       return { identifier };
     }),
-  change: publicProcedure
+  change: protectedProcedure
     .input(
       z.object({
         identifier: z.string(),
@@ -107,10 +151,13 @@ export const feeRouter = createTRPCRouter({
           size: input.size,
           discount: input.discount,
         })
-        .where(eq(feeData.identifier, input.identifier));
+        .where(and(
+          eq(feeData.identifier, input.identifier),
+          eq(feeData.entidadId, ctx.orgId ?? ""),
+        ));
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(
       z.object({
         id: z.string(),
@@ -119,12 +166,18 @@ export const feeRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       await db
         .delete(schema.feeData)
-        .where(eq(schema.feeData.identifier, input.id));
+        .where(and(
+          eq(schema.feeData.identifier, input.id),
+          eq(schema.feeData.entidadId, ctx.orgId ?? ""),
+        ));
 
       await ctx.db
         .update(sizes)
         .set({ tarifa: null })
-        .where(eq(sizes.tarifa, input.id));
+        .where(and(
+          eq(sizes.tarifa, input.id),
+          eq(sizes.entidadId, ctx.orgId ?? ""),
+        ));
     }),
 });
 

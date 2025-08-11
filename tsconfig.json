@@ -37,7 +37,7 @@
     "**/*.cjs",
     "**/*.js",
     ".next/types/**/*.ts",
-    "src/app/_components/email-select copy"
+    "src/app/_components/token-select"
   ],
   "exclude": ["node_modules"]
 }

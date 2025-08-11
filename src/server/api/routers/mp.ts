@@ -6,7 +6,7 @@ import {
 } from "~/server/api/trpc";
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { TRPCError } from "@trpc/server";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db, schema } from "~/server/db";
 import { type PrivateConfigKeys } from "~/lib/config";
 import { MpMeta } from "~/lib/types";
@@ -32,11 +32,23 @@ export const mpRouter = createTRPCRouter({
       IdTransactions: z.array(z.number()),
       meta: z.custom<MpMeta>(),
       href: z.string(),
+      entityId: z.string().min(1),
     }))
     .mutation(async ({ input, ctx }) => {
+      const ent = await db.query.companies.findFirst({
+        where: eq(schema.companies.id, input.entityId)
+      });
+
+      if (!ent) {
+        throw new TRPCError({ code: 'NOT_FOUND' });
+      }
+
       const claveConfigMpWhUrl: PrivateConfigKeys = 'mercadopago_webhook_url';
       const claveMpWhUrl = await ctx.db.query.privateConfig.findFirst({
-        where: eq(schema.privateConfig.key, claveConfigMpWhUrl)
+        where: and(
+          eq(schema.privateConfig.key, claveConfigMpWhUrl),
+          eq(schema.privateConfig.entidadId, ent.id),
+        )
       });
 
       if (!claveMpWhUrl) {
@@ -59,7 +71,10 @@ export const mpRouter = createTRPCRouter({
       }
 
       const reservas = await ctx.db.query.reservas.findMany({
-        where: inArray(schema.reservas.IdTransaction, r)
+        where: and(
+          inArray(schema.reservas.IdTransaction, r),
+          eq(schema.reservas.entidadId, ent.id),
+        )
       });
 
       if (reservas.length <= 0) {
@@ -68,7 +83,10 @@ export const mpRouter = createTRPCRouter({
 
       const claveConfigMp: PrivateConfigKeys = 'mercadopago_private_key';
       const claveMp = await ctx.db.query.privateConfig.findFirst({
-        where: eq(schema.privateConfig.key, claveConfigMp)
+        where: and(
+          eq(schema.privateConfig.key, claveConfigMp),
+          eq(schema.privateConfig.entidadId, ent.id),
+        )
       });
 
       if (!claveMp) {
@@ -88,6 +106,7 @@ export const mpRouter = createTRPCRouter({
       const meta: MpMeta = {
         ...input.meta,
         id_transactions: r,
+        entidad_id: ent.id,
       };
 
       const preference = new Preference(mpClient);
@@ -107,6 +126,7 @@ export const mpRouter = createTRPCRouter({
         .values({
           mpMetaJson: JSON.stringify(meta),
           idTransactionsJson: JSON.stringify(r),
+          entidadId: ent.id,
         })
         .returning();
 
@@ -155,6 +175,7 @@ export const mpRouter = createTRPCRouter({
   areReservesPaid: publicProcedure
     .input(z.object({
       IdTransactions: z.array(z.number()),
+      entityId: z.string().min(1),
     }))
     .mutation(async ({ ctx, input }) => {
       const r = [...(new Set(input.IdTransactions))];
@@ -163,7 +184,10 @@ export const mpRouter = createTRPCRouter({
       }
 
       const reservas = await ctx.db.query.reservas.findMany({
-        where: inArray(schema.reservas.IdTransaction, r)
+        where: and(
+          inArray(schema.reservas.IdTransaction, r),
+          eq(schema.reservas.entidadId, input.entityId),
+        )
       });
 
       if (reservas.length <= 0) {

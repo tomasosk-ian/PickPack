@@ -9,11 +9,13 @@ import { ChevronLeftCircle } from "lucide-react";
 import ButtonIconCustomComponent from "~/components/button-icon-custom";
 import type { Translations } from "~/translations";
 import { api } from "~/trpc/react";
+import { Store } from "~/server/api/routers/store";
 
 export default function DateComponent({
   t,
   ...props
 }: {
+  store: Store;
   startDate: string;
   setStartDate: (startDate: string) => void;
   endDate: string;
@@ -25,6 +27,7 @@ export default function DateComponent({
 }) {
   const { data: plazoReserva } = api.config.getKey.useQuery({
     key: "reserve_from_now",
+    entityId: props.store.entidadId ?? ""
   });
   const [range, setRange] = useState<DateRange | undefined>();
 
@@ -98,7 +101,7 @@ export default function DateComponent({
   }
 
   const textoReservas = useMemo(() => {
-    if (typeof plazoReserva === "undefined") {
+    if (!plazoReserva) {
       return "";
     } else if (plazoReserva.value.trim().toLowerCase() === "true") {
       return t("dateReservesTextNow");

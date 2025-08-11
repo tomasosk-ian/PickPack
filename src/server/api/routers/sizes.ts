@@ -1,6 +1,7 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { env } from "~/env";
+import { trpcTienePermisoCtxAny } from "~/lib/roles";
 import { createId } from "~/lib/utils";
 
 import {
@@ -10,7 +11,7 @@ import {
 } from "~/server/api/trpc";
 import { db, schema } from "~/server/db";
 
-async function sizesList(localId?: string): Promise<z.infer<typeof responseValidator>> {
+export async function sizesList(localId: string | null, entityId: string | null): Promise<z.infer<typeof responseValidator>> {
   const sizeResponse = await fetch(`${env.SERVER_URL}/api/size`);
 
   // Handle the response from the external API
@@ -22,6 +23,9 @@ async function sizesList(localId?: string): Promise<z.infer<typeof responseValid
   }
 
   const reservedBoxData = await sizeResponse.json();
+  const allLocales = await db.query.stores.findMany({
+    where: eq(schema.stores.entidadId, entityId ?? "")
+  });
 
   const validatedData = responseValidator.parse(reservedBoxData);
   await Promise.all(
@@ -34,6 +38,25 @@ async function sizesList(localId?: string): Promise<z.infer<typeof responseValid
             eq(schema.feeData.localId, localId),
           ),
         });
+
+        if (!entityId) {
+          const store = await db.query.stores.findFirst({
+            where: eq(schema.stores.identifier, localId)
+          });
+
+          if (store) {
+            entityId = store.entidadId ?? entityId;
+          }
+        }
+      } else if (typeof entityId === 'string') {
+        if (allLocales.length > 0) {
+          fee = await db.query.feeData.findFirst({
+            where: and(
+              eq(schema.feeData.size, v.id),
+              inArray(schema.feeData.localId, allLocales.map(v => v.identifier)),
+            ),
+          });
+        }
       } else {
         fee = await db.query.feeData.findFirst({
           where: eq(schema.feeData.size, v.id),
@@ -41,9 +64,16 @@ async function sizesList(localId?: string): Promise<z.infer<typeof responseValid
       }
 
       v.tarifa = fee?.identifier;
+      entityId = entityId ?? fee?.entidadId ?? null;
+      if (!entityId) {
+        throw new Error("sizesList !entityId " + localId + " " + entityId)
+      }
 
       const existingSize = await db.query.sizes.findFirst({
-        where: eq(schema.sizes.id, v.id), // Utiliza el nombre correcto del campo
+        where: and(
+          eq(schema.sizes.id, v.id),
+          eq(schema.sizes.entidadId, entityId),
+        )
       });
 
       if (existingSize) {
@@ -52,12 +82,19 @@ async function sizesList(localId?: string): Promise<z.infer<typeof responseValid
           .update(schema.sizes)
           .set({
             ...v,
+            entidadId: entityId,
           })
-          .where(eq(schema.sizes.id, v.id));
+          .where(
+            and(
+              eq(schema.sizes.id, v.id),
+              eq(schema.sizes.entidadId, entityId),
+            )
+          );
       } else {
         // Si el tamaño no existe, insértalo
         await db.insert(schema.sizes).values({
           ...v,
+          entidadId: entityId ?? fee?.entidadId,
         });
       }
     }),
@@ -79,55 +116,95 @@ async function disponibilidad(nroSerieLocker: string, inicio: string | null, fin
     return errorResponse.message || "Unknown error";
   }
 
-
   const reservedBoxData = await sizeResponse.json();
   const validatedData = responseValidator.parse(reservedBoxData);
   return validatedData;
 }
 
 type LockerSize = z.infer<typeof responseValidator>[number];
-async function sizeExpand(v: LockerSize, localId: string): Promise<LockerSize> {
-  const fee = await db.query.feeData.findFirst({
-    where: and(
-      eq(schema.feeData.size, v.id),
-      eq(schema.feeData.localId, localId),
-    ),
-  });
+const feeDataPreparedSE = db.query.feeData.findFirst({
+  where: and(
+    eq(schema.feeData.size, sql.placeholder("sizeId")),
+    eq(schema.feeData.localId, sql.placeholder("localId")),
+  ),
+}).prepare();
 
-  v.tarifa = fee?.identifier;
+const storesPreparedSE = db.query.stores.findFirst({
+  where: eq(schema.stores.identifier, sql.placeholder("localId"))
+}).prepare();
 
-  const existingSize = await db.query.sizes.findFirst({
-    where: eq(schema.sizes.id, v.id), // Utiliza el nombre correcto del campo
-  });
+const sizePreparedSE = db.query.sizes.findFirst({
+  where: and(
+    eq(schema.sizes.id, sql.placeholder("sizeId")),
+    eq(schema.sizes.entidadId, sql.placeholder("entidadId")),
+  )
+}).prepare();
 
+async function sizeExpand(lsize: LockerSize, localId: string): Promise<LockerSize> {
+  let entityId = null;
+
+  const [fee, store] = await Promise.all([
+    feeDataPreparedSE.execute({ sizeId: lsize.id, localId }),
+    storesPreparedSE.execute({ localId }),
+  ]);
+
+  if (store) {
+    entityId = store.entidadId ?? entityId ?? fee?.entidadId;
+  }
+
+  if (!entityId) {
+    throw new Error("sizeExpand sin entityId " + lsize.id + " " + localId);
+  }
+
+  const existingSize = await sizePreparedSE.execute({ sizeId: lsize.id, entidadId: entityId });
+
+  lsize.tarifa = fee?.identifier;
   if (existingSize) {
     // Si el tamaño ya existe, actualiza los datos
     await db
       .update(schema.sizes)
       .set({
-        ...v,
+        ...lsize,
+        entidadId: entityId,
       })
-      .where(eq(schema.sizes.id, v.id));
-    v.image = existingSize.image;
+      .where(and(
+        eq(schema.sizes.id, lsize.id),
+        eq(schema.sizes.entidadId, entityId),
+      ));
+    lsize.image = existingSize.image;
   } else {
     // Si el tamaño no existe, insértalo
     await db.insert(schema.sizes).values({
-      ...v,
+      ...lsize,
+      entidadId: entityId,
     });
   }
 
-  return v;
+  return lsize;
 }
 
 export const sizeRouter = createTRPCRouter({
   get: publicProcedure
     .input(
       z.object({
-        store: z.string().optional(),
+        store: z.string().nullable(),
       }),
     )
     .query(async ({ input }) => {
-      return sizesList(input.store);
+      if (input.store === '') {
+        return [];
+      }
+
+      return sizesList(input.store, null);
+    }),
+  getProt: protectedProcedure
+    .input(
+      z.object({
+        store: z.string().nullable(),
+      }),
+    )
+    .query(async ({ input, ctx }) => {
+      return sizesList(input.store, ctx.orgId ?? "");
     }),
   getAvailability: publicProcedure
     .input(
@@ -186,13 +263,18 @@ export const sizeRouter = createTRPCRouter({
       return Object.fromEntries(Object.entries(sizesLockersMap).filter(v => typeof v[1].size.tarifa === 'string'));
     }),
 
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(
       z.object({
         sizeId: z.number(),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      await trpcTienePermisoCtxAny(ctx, [
+        "panel:locales",
+        "panel:sizes"
+      ]);
+
       const sizeResponse = await fetch(`${env.SERVER_URL}/api/size`);
 
       // Handle the response from the external API
@@ -218,18 +300,28 @@ export const sizeRouter = createTRPCRouter({
       return size;
     }),
 
-  changeImage: publicProcedure
+  changeImage: protectedProcedure
     .input(
       z.object({
         id: z.number(),
         image: z.string().nullable(),
       }),
     )
-    .mutation(({ ctx, input }) => {
+    .mutation(async ({ ctx, input }) => {
+      await trpcTienePermisoCtxAny(ctx, [
+        "panel:locales",
+        "panel:sizes"
+      ]);
+
       return ctx.db
         .update(schema.sizes)
         .set({ image: input.image })
-        .where(eq(schema.sizes.id, input.id));
+        .where(
+          and(
+            eq(schema.sizes.id, input.id),
+            eq(schema.sizes.entidadId, ctx.orgId ?? ""),
+          )
+        );
     }),
 });
 

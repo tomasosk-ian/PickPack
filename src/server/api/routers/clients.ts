@@ -1,36 +1,46 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import type { RouterOutputs } from "~/trpc/shared";
 import { db, schema } from "~/server/db";
 import { clients } from "~/server/db/schema";
+import { TRPCError } from "@trpc/server";
+import { trpcTienePermisoCtx } from "~/lib/roles";
 
 export const clientsRouter = createTRPCRouter({
-  get: publicProcedure.query(async ({ ctx }) => {
-    const result = ctx.db.query.clients.findMany({
-      orderBy: (client, { asc }) => [asc(client.email)],
-    });
-    return result;
-  }),
-  getGroupedByEmail: publicProcedure.query(async ({ ctx }) => {
-    const clients = await ctx.db.query.clients.findMany({
-      orderBy: (client, { asc }) => [asc(client.email)],
-    });
+  get: publicProcedure
+    .input(z.object({
+      entityId: z.string().min(1)
+    }))
+    .query(async ({ ctx, input }) => {
+      const result = ctx.db.query.clients.findMany({
+        orderBy: (client, { asc }) => [asc(client.email)],
+        where: eq(schema.clients.entidadId, input.entityId),
+      });
+      return result;
+    }),
+  getGroupedByEmail: protectedProcedure
+    .query(async ({ ctx }) => {
+      await trpcTienePermisoCtx(ctx, "panel:clientes");
+      const clients = await ctx.db.query.clients.findMany({
+        orderBy: (client, { asc }) => [asc(client.email)],
+        where: eq(schema.clients.entidadId, ctx.orgId ?? ""),
+      });
 
-    // Group by email using JavaScript
-    const groupedByEmail = clients.reduce(
-      (acc, client) => {
-        if (!acc[client.email!]) {
-          acc[client.email!] = [];
-        }
-        acc[client.email!]!.push(client);
-        return acc;
-      },
-      {} as Record<string, typeof clients>,
-    );
-    return groupedByEmail;
-  }),
+      // Group by email using JavaScript
+      const groupedByEmail = clients.reduce(
+        (acc, client) => {
+          if (!acc[client.email!]) {
+            acc[client.email!] = [];
+          }
+          acc[client.email!]!.push(client);
+          return acc;
+        },
+        {} as Record<string, typeof clients>,
+      );
+      return groupedByEmail;
+    }),
   create: publicProcedure
     .input(
       z.object({
@@ -40,13 +50,18 @@ export const clientsRouter = createTRPCRouter({
         prefijo: z.number().nullable().optional(),
         telefono: z.number().nullable().optional(),
         dni: z.string().min(0).max(1023).optional().nullable(),
+        entityId: z.string().min(1),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       // TODO: verificar permisos
       const client = await ctx.db.query.clients.findFirst({
-        where: eq(schema.clients.email, input.email!),
+        where: and(
+          eq(schema.clients.email, input.email!),
+          eq(schema.clients.entidadId, input.entityId),
+        ),
       });
+
       if (!client) {
         const result = await db.insert(schema.clients).values({
           name: input.name,
@@ -55,6 +70,7 @@ export const clientsRouter = createTRPCRouter({
           prefijo: input.prefijo,
           telefono: input.telefono,
           dni: input.dni,
+          entidadId: input.entityId,
         });
         const id = parseInt(result.lastInsertRowid?.toString()!);
         return { id };
@@ -63,13 +79,14 @@ export const clientsRouter = createTRPCRouter({
         return { id };
       }
     }),
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(
       z.object({
         identifier: z.number().optional(),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      await trpcTienePermisoCtx(ctx, "panel:clientes");
       if (input.identifier) {
         const client = await db.query.clients.findFirst({
           where: eq(schema.clients.identifier, input.identifier),
@@ -78,20 +95,32 @@ export const clientsRouter = createTRPCRouter({
         return client;
       }
     }),
-  getByEmail: publicProcedure
+  getByEmailAndToken: publicProcedure
     .input(
       z.object({
         email: z.string(),
+        token: z.number()
       }),
     )
     .query(async ({ input }) => {
       const client = await db.query.clients.findFirst({
-        where: eq(schema.clients.email, input.email),
+        where: (table, { exists, eq }) => and(
+          eq(table.email, input.email),
+          exists(
+            db.select()
+              .from(schema.reservas)
+              .where(and(
+                eq(schema.reservas.client, table.email),
+                eq(schema.reservas.entidadId, table.entidadId),
+                eq(schema.reservas.Token1, input.token),
+              ))
+          )
+        ),
       });
 
       return client;
     }),
-  change: publicProcedure
+  change: protectedProcedure
     .input(
       z.object({
         identifier: z.number(),
@@ -103,23 +132,39 @@ export const clientsRouter = createTRPCRouter({
         dni: z.string().min(0).max(1023).optional().nullable(),
       }),
     )
-    .mutation(({ ctx, input }) => {
+    .mutation(async ({ ctx, input }) => {
+      await trpcTienePermisoCtx(ctx, "panel:clientes");
+      if (!ctx.orgId) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: "Sin entidad" });
+      }
+
       return ctx.db
         .update(clients)
         .set(input)
-        .where(eq(clients.identifier, input.identifier));
+        .where(and(
+          eq(clients.identifier, input.identifier),
+          eq(clients.entidadId, ctx.orgId),
+        ));
     }),
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(
       z.object({
         id: z.number(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await trpcTienePermisoCtx(ctx, "panel:clientes");
+      if (!ctx.orgId) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: "Sin entidad" });
+      }
+
       await db
         .delete(schema.clients)
-        .where(eq(schema.clients.identifier, input.id));
+        .where(and(
+          eq(clients.identifier, input.id),
+          eq(clients.entidadId, ctx.orgId),
+        ));
     }),
 });
 
-export type Client = RouterOutputs["client"]["get"][number];
+export type Client = RouterOutputs["clients"]["get"][number];

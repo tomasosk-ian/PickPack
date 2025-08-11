@@ -55,7 +55,6 @@ export function AddCoinDialog() {
       toast.error(error.message);
     }
   }
-  // const coins = await api.coin.get.query();
 
   return (
     <>

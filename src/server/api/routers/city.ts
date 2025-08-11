@@ -10,6 +10,8 @@ import {
 import { cities } from "~/server/db/schema";
 import { RouterOutputs } from "~/trpc/shared";
 import { db, schema } from "~/server/db";
+import { trpcTienePermisoCtx } from "~/lib/roles";
+import { PERMISO_ADMIN } from "~/lib/permisos";
 
 export const cityRouter = createTRPCRouter({
   get: publicProcedure.query(({ ctx }) => {
@@ -25,7 +27,7 @@ export const cityRouter = createTRPCRouter({
       where: eq(cities.identifier, input),
     });
   }),
-  create: publicProcedure
+  create: protectedProcedure
     .input(
       z.object({
         name: z.string().min(0).max(1023),
@@ -34,7 +36,7 @@ export const cityRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // TODO: verificar permisos
+      await trpcTienePermisoCtx(ctx, PERMISO_ADMIN);
 
       const identifier = createId();
 
@@ -47,20 +49,21 @@ export const cityRouter = createTRPCRouter({
 
       return { identifier };
     }),
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(
       z.object({
         cityId: z.string(),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      await trpcTienePermisoCtx(ctx, PERMISO_ADMIN);
       const channel = await db.query.cities.findFirst({
         where: eq(schema.cities.identifier, input.cityId),
       });
 
       return channel;
     }),
-  change: publicProcedure
+  change: protectedProcedure
     .input(
       z.object({
         identifier: z.string(),
@@ -68,20 +71,22 @@ export const cityRouter = createTRPCRouter({
         image: z.string().nullable(),
       }),
     )
-    .mutation(({ ctx, input }) => {
+    .mutation(async ({ ctx, input }) => {
+      await trpcTienePermisoCtx(ctx, PERMISO_ADMIN);
       return ctx.db
         .update(cities)
         .set({ name: input.name, image: input.image })
         .where(eq(cities.identifier, input.identifier));
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(
       z.object({
         id: z.string(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await trpcTienePermisoCtx(ctx, PERMISO_ADMIN);
       await db
         .delete(schema.cities)
         .where(eq(schema.cities.identifier, input.id));

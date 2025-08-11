@@ -14,6 +14,7 @@ export type ClientTableRecord = {
   prefijo: number | null;
   telefono: number | null;
   dni: string | null;
+  entidadId: string | null; // solo para el tipado
 };
 
 export const columns: ColumnDef<ClientTableRecord>[] = [

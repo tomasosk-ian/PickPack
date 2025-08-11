@@ -24,7 +24,7 @@ import Success from "./success/success";
 import { Client } from "~/server/api/routers/clients";
 import Payment from "./payment/page";
 import { Coin } from "~/server/api/routers/coin";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import UserForm from "./user/userForm";
 import ButtonCustomComponent from "~/components/buttonCustom";
 import { Cupon } from "~/server/api/routers/cupones";
@@ -43,11 +43,10 @@ export const Icons = {
 let paymentDisabledRef = false;
 export default function HomePage(props: {
   cities: City[];
-  sizes: Size[];
-  stores: Store[];
   lang?: string;
 }) {
   const t = useTranslations('HomePage');
+  const { data: loadedStores = [] } = api.store.get.useQuery();
 
   const [paymentDisabled, setPaymentDisabled] = useState(false);
   const [city, setCity] = useState<City | null>(null);
@@ -80,9 +79,18 @@ export default function HomePage(props: {
     prefijo: 0,
     telefono: 0,
     dni: "",
+    entidadId: "",
   });
 
-  const { mutateAsync: createClient } = api.client.create.useMutation();
+  const { data: loadedSizes = [], refetch: refetchSizes } = api.size.get.useQuery({
+    store: store?.identifier ?? "",
+  });
+
+  useEffect(() => {
+    refetchSizes();
+  }, [store]);
+
+  const { mutateAsync: createClient } = api.clients.create.useMutation();
 
   const [total, setTotal] = useState<number>(0);
   const [coin, setCoin] = useState<Coin>();
@@ -125,7 +133,7 @@ export default function HomePage(props: {
 
   const storesFinal = useMemo(() => {
     if (props.cities.length === 0) {
-      return props.stores;
+      return loadedStores;
     } else {
       return stores;
     }
@@ -168,18 +176,25 @@ export default function HomePage(props: {
       let failed = false;
       if (handleSubmit()) {
         const clientResponse = await createClient(
-          client,
+          {
+            ...client,
+            entityId: store?.entidadId ?? "",
+          }
         ).then(async (res: any) => {
           //creo una reserva para este cliente y seteo el numero de reserva
           const nreserve = await reserveToClient({
             clientId: res.id,
+            entityId: store?.entidadId ?? "",
           });
 
           setNReserve(nreserve!);
           for (const reserve of reserves) {
             reserve.client = client.email;
             const response = await reservarBox(
-              reserve!,
+              {
+                ...reserve!,
+                entityId: store?.entidadId ?? "",
+              }
             );
             const IdTransaction = parseInt(response);
             if (!isNaN(IdTransaction)) {
@@ -212,6 +227,7 @@ export default function HomePage(props: {
             cantidad: reserves.length,
             phone: `${client.prefijo ?? 0}${client.telefono ?? 0}`,
             identification: client.dni ?? "0",
+            entityId: store?.entidadId ?? "",
           });
           setCheckoutNumber(checkoutNumber);
         }
@@ -281,6 +297,7 @@ export default function HomePage(props: {
                         setEndDate={setEndDate}
                         days={days}
                         setDays={setDays}
+                        store={store}
                         t={t}
                         goBack={() => {
                           setStore(null);
@@ -326,6 +343,7 @@ export default function HomePage(props: {
                       <div className="flex flex-col items-center lg:flex-row lg:space-x-10">
                         <div className="w-full lg:w-auto">
                           <UserForm
+                            store={store}
                             client={client}
                             setClient={setClient}
                             errors={errors}
@@ -348,7 +366,7 @@ export default function HomePage(props: {
                             coin={coin!}
                             setCoin={setCoin}
                             coins={coins!}
-                            sizes={props.sizes}
+                            sizes={loadedSizes}
                             cupon={cupon}
                             isExt={false}
                             t={t}
@@ -401,7 +419,7 @@ export default function HomePage(props: {
                           reserves={reserves}
                           setPagoOk={setPagoOk}
                           setReserves={setReserves}
-                          sizes={props.sizes}
+                          sizes={loadedSizes}
                           store={store!}
                           total={total}
                           cupon={cupon}
@@ -421,7 +439,7 @@ export default function HomePage(props: {
                           total={total}
                           coin={coin}
                           checkoutNumber={checkoutNumber!}
-                          sizes={props.sizes}
+                          sizes={loadedSizes}
                           startDate={startDate}
                           endDate={endDate}
                           t={t}
@@ -434,7 +452,7 @@ export default function HomePage(props: {
             )}
             {isExtension && (
               <div className="container absolute">
-                <Extension t={t} sizes={props.sizes} onBack={() => {
+                <Extension t={t} sizes={loadedSizes} onBack={() => {
                   setIsExtension(false);
                 }} />
               </div>

@@ -1,28 +1,13 @@
-import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { createId } from "~/lib/utils";
 
 import {
   createTRPCRouter,
-  protectedProcedure,
   publicProcedure,
 } from "~/server/api/trpc";
-import { cities } from "~/server/db/schema";
 import { RouterOutputs } from "~/trpc/shared";
-import { db, schema } from "~/server/db";
 import { clerkClient } from "@clerk/nextjs/server";
 
 export const clerkRouter = createTRPCRouter({
-  getById: publicProcedure
-    .input(
-      z.object({
-        userId: z.string(),
-      }),
-    )
-    .query(async ({ input }) => {
-      const res = await clerkClient.users.getUser(input.userId);
-      return res;
-    }),
   getOrganizations: publicProcedure.query(async ({ input }) => {
     const res = clerkClient.organizations.getOrganizationList();
     return res;
@@ -44,7 +29,7 @@ export const clerkRouter = createTRPCRouter({
     .input(
       z.object({
         userId: z.string().min(0).max(1023),
-        role: z.string().min(0).max(1023),
+        // role: z.string().min(0).max(1023),
         firstName: z.string().min(0).max(1023).optional().nullable(),
         lastName: z.string().min(0).max(1023).optional().nullable(),
         username: z.string().min(0).max(1023).optional().nullable(),
@@ -69,7 +54,7 @@ export const clerkRouter = createTRPCRouter({
         console.log("error", e);
       }
       const res = clerkClient.users.updateUser(input.userId, {
-        publicMetadata: { role: input.role },
+        // publicMetadata: { role: input.role },
         firstName: input.firstName ?? undefined,
         lastName: input.lastName ?? undefined,
         // username: input.username ?? undefined,

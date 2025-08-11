@@ -16,11 +16,11 @@ import Success from "./success/success";
 import { Client } from "~/server/api/routers/clients";
 import Payment from "./payment/page";
 import { Coin } from "~/server/api/routers/coin";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import UserForm from "./user/userForm";
 import ButtonCustomComponent from "~/components/buttonCustom";
 import SelectEmail from "./email-select/component";
-import SelectToken from "./email-select copy/component";
+import SelectToken from "./token-select/component";
 import DateExtension from "./extension-date/component";
 import { Reserve } from "~/server/api/routers/lockerReserveRouter";
 import ButtonIconCustomComponent from "~/components/button-icon-custom";
@@ -39,12 +39,10 @@ export default function Extension({ t, ...props }: {
   const [paymentDisabled, setPaymentDisabled] = useState(false);
   const [email, setEmail] = useState("");
   const [token, setToken] = useState<number>();
-  const [inputToken, setInputToken] = useState(false);
   const [startDate, setStartDate] = useState<string>();
   const [endDate, setEndDate] = useState<string>();
   const [days, setDays] = useState<number>(0);
   const [reserve, setReserve] = useState<Reserve>();
-  const [clientId, setClientId] = useState<number>();
   const [total, setTotal] = useState<number>(100);
   const [coin, setCoin] = useState<Coin>();
   const [nReserve, setNReserve] = useState<number>(0);
@@ -64,7 +62,6 @@ export default function Extension({ t, ...props }: {
     dni: "",
   });
   const { data: coins } = api.coin.get.useQuery();
-  const { data: sizes } = api.store.get.useQuery();
   const { data: stores } = api.store.get.useQuery();
   const [terms, setTerms] = useState<boolean>(false);
   const { mutateAsync: reserveToClient } =
@@ -81,6 +78,7 @@ export default function Extension({ t, ...props }: {
     prefijo: 0,
     telefono: 0,
     dni: "0",
+    entidadId: "",
   });
   
   const isValidEmail = (email: string) => {
@@ -106,6 +104,16 @@ export default function Extension({ t, ...props }: {
 
     return true;
   };
+
+  const store = useMemo(() => {
+    if (!reserve || !stores) {
+      return null;
+    }
+
+    return stores
+      .filter(v => v.entidadId === client.entidadId)
+      .find((s) => s.lockers.some(l => l.serieLocker == reserve.NroSerie))!
+  }, [reserve]);
 
   function AlertFailedResponse() {
     return (
@@ -142,6 +150,7 @@ export default function Extension({ t, ...props }: {
         //creo una reserva para este cliente y seteo el numero de reserva
         const nreserve = await reserveToClient({
           clientId: client.identifier,
+          entityId: client.entidadId ?? ""
         });
         setNReserve(nreserve!);
         reserve.client = client.email;
@@ -171,6 +180,7 @@ export default function Extension({ t, ...props }: {
             phone: `${client.prefijo ?? 0}${client.telefono ?? 0}`,
             identification: client.dni ?? "",
             cantidad: 1,
+            entityId: client.entidadId ?? "",
           });
           setCheckoutNumber(checkoutNumber);
         }
@@ -217,6 +227,7 @@ export default function Extension({ t, ...props }: {
               setDays={setDays}
               token={token}
               email={email}
+              client={client}
               setReserve={setReserve}
               setFailed={setFailed}
             />
@@ -235,6 +246,7 @@ export default function Extension({ t, ...props }: {
               <div className="w-full lg:w-auto">
                 <UserForm
                   t={t}
+                  store={null}
                   client={client}
                   setClient={setClient}
                   errors={errors}
@@ -249,7 +261,7 @@ export default function Extension({ t, ...props }: {
                 <Booking
                   t={t}
                   onEdit={undefined}
-                  store={stores.find((s) => s.lockers.some(l => l.serieLocker == reserve.NroSerie))!}
+                  store={store!}
                   startDate={startDate!}
                   endDate={endDate!}
                   reserves={[reserve]}
@@ -305,9 +317,7 @@ export default function Extension({ t, ...props }: {
                     setPagoOk={setPagoOk}
                     setReserves={setReserves}
                     sizes={props.sizes}
-                    store={
-                      stores.find((s) => s.lockers.some(l => l.serieLocker == reserve.NroSerie))!
-                    }
+                    store={store!}
                     total={total}
                     cupon={null}
                     isExt={true}
@@ -323,7 +333,7 @@ export default function Extension({ t, ...props }: {
               <Success
                 t={t}
                 reserves={reserves}
-                store={stores?.find((s) => s.lockers.some(l => l.serieLocker == reserve!.NroSerie))!}
+                store={store!}
                 nReserve={nReserve!}
                 total={total}
                 coin={coin}

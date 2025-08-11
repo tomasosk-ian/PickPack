@@ -1,14 +1,15 @@
 import { z } from "zod";
 import { createId } from "~/lib/utils";
-import { and, gte, lte, isNotNull, eq } from "drizzle-orm";
+import { and, gte, lte, isNotNull, eq, inArray } from "drizzle-orm";
 
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
 import { RouterOutputs } from "~/trpc/shared";
 import { db, schema } from "~/server/db";
 import { transactions } from "~/server/db/schema";
+import { trpcTienePermisoCtx } from "~/lib/roles";
 
 export const transactionRouter = createTRPCRouter({
-  get: publicProcedure.query(({ ctx }) => {
+  get: protectedProcedure.query(({ ctx }) => {
     const result = ctx.db.query.transactions.findMany({
       orderBy: (client, { desc }) => [desc(client.id)],
     });
@@ -21,6 +22,7 @@ export const transactionRouter = createTRPCRouter({
         client: z.string().nullable().optional(),
         nReserve: z.number().nullable().optional(),
         amount: z.number().nullable().optional(),
+        entityId: z.string().min(1),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -33,45 +35,26 @@ export const transactionRouter = createTRPCRouter({
         client: input.client,
         amount: input.amount,
         nReserve: input.nReserve,
+        entidadId: input.entityId,
       });
 
       return { identifier };
     }),
-  getById: publicProcedure
-    .input(
-      z.object({
-        Id: z.number(),
-      }),
-    )
-    .query(async ({ input }) => {
-      const channel = await db.query.transactions.findFirst({
-        where: eq(schema.transactions.id, input.Id),
-      });
 
-      return channel;
-    }),
-  // getBynroReserve: publicProcedure
-  //   .input(
-  //     z.object({
-  //       nReserve: z.number(),
-  //     }),
-  //   )
-  //   .query(async ({ input }) => {
-  //     const channel = await db.query.transactions.findFirst({
-  //       where: eq(schema.transactions.nReserve, input.nReserve),
-  //       orderBy: (transaction, { desc }) => [desc(transaction.confirmedAt)],
-  //     });
-  //     return channel;
-  //   }),
-  getBynroReserve: publicProcedure
+  getBynroReserve: protectedProcedure
     .input(
       z.object({
         nReserve: z.number(),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
+      await trpcTienePermisoCtx(ctx, "panel:reservas");
+
       const channel = await db.query.transactions.findFirst({
-        where: eq(schema.transactions.nReserve, input.nReserve),
+        where: and(
+          eq(schema.transactions.nReserve, input.nReserve),
+          eq(schema.transactions.entidadId, ctx.orgId ?? ""),
+        ),
         orderBy: (transaction, { desc }) => [desc(transaction.confirmedAt)],
       });
 
@@ -81,46 +64,28 @@ export const transactionRouter = createTRPCRouter({
       return channel;
     }),
 
-  change: publicProcedure
-    .input(
-      z.object({
-        id: z.number(),
-        confirm: z.boolean().optional(),
-      }),
-    )
-    .mutation(({ ctx, input }) => {
-      return ctx.db
-        .update(transactions)
-        .set(input)
-        .where(eq(transactions.id, input.id));
-    }),
-  delete: publicProcedure
-    .input(
-      z.object({
-        id: z.string(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      await db
-        .delete(schema.cities)
-        .where(eq(schema.cities.identifier, input.id));
-    }),
-  getTransactionsByDate: publicProcedure
+  getTransactionsByDate: protectedProcedure
     .input(
       z.object({
         startDate: z.string(),
         endDate: z.string(),
+        filterEntities: z.array(z.string()).nullable(),
       }),
     )
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const { startDate, endDate } = input;
 
+      const conditions = [
+        gte(schema.transactions.confirmedAt, startDate),
+        lte(schema.transactions.confirmedAt, endDate),
+      ];
+
+      if (input.filterEntities && input.filterEntities.length > 0) {
+        conditions.push(inArray(schema.transactions.entidadId, input.filterEntities));
+      }
+
       const result = await db.query.transactions.findMany({
-        where: (transaction) =>
-          and(
-            gte(transaction.confirmedAt, startDate),
-            lte(transaction.confirmedAt, endDate),
-          ),
+        where: and(...conditions),
         orderBy: (transaction, { asc }) => [asc(transaction.confirmedAt)],
       });
 

@@ -44,7 +44,7 @@ export default function ReservePage(props: {
   isAdmin: boolean;
   store: Store | undefined;
 }) {
-  const { data: plazoReserva } = api.config.getKey.useQuery({ key: "reserve_from_now" });
+  const { data: plazoReserva } = api.config.getKeyProt.useQuery({ key: "reserve_from_now" });
   const isReserveModeNow = useMemo(() => (plazoReserva?.value.trim().toLowerCase() ?? "false") === "true", [plazoReserva]);
 
   const { store } = props;

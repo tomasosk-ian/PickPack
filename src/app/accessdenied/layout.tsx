@@ -1,9 +1,6 @@
 import { TRPCReactProvider } from "~/trpc/react";
 import { cookies } from "next/headers";
-import AppLayout from "~/components/applayout";
 import { getServerAuthSession } from "~/server/auth";
-import AppSidenav from "~/components/app-sidenav";
-import { Toaster } from "sonner";
 import LayoutContainer from "~/components/layout-container";
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
