@@ -25,27 +25,27 @@ export default function Home({ lang }: { lang?: string }) {
         <header className="header-bar">
           <div className="branding">
             <div id="site-title" className="assistive-text">
-              DCM Solution
+              Pick Pack
             </div>
             <div id="site-description" className="assistive-text">
-              Una solución inteligente para el guardado de equipaje
+              Recibe tus paquetes donde quieras
             </div>
-            <a className="" href="https://dcm.com.ar/">
+            <a className="" href="https://pickpack.com.ar/">
               <img
                 className="preload-me"
-                src="./dcm.png"
+                src="./Pick-Pack.png"
                 width="207"
                 height="74"
                 sizes="207px"
-                alt="DCM Solution"
+                alt="Pick Pack"
               />
               <img
                 className="mobile-logo preload-me"
-                src="./dcm.png"
+                src="./Pick-Pack.png"
                 width="183"
                 height="64"
                 sizes="183px"
-                alt="DCM Solution"
+                alt="Pick Pack"
               />
             </a>
           </div>
@@ -73,14 +73,14 @@ export default function Home({ lang }: { lang?: string }) {
           <div className="mobile-navigation"></div>
           <div className="mobile-mini-widgets"></div>
           <div className="mobile-branding">
-            <a className="" href="https://dcm.com.ar/">
+            <a className="" href="https://pickpack.com.ar/">
               <img
                 className="preload-me"
-                src="./dcm.png"
+                src="./Pick-Pack.png"
                 width="207"
                 height="74"
                 sizes="207px"
-                alt="DCM Solution"
+                alt="Pick Pack"
               />
             </a>
           </div>

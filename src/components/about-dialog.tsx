@@ -24,10 +24,10 @@ export function About() {
             <div className="col-12 flex pb-4">
               <div className="col-6">
                 <Image
-                  src="/dcm.png"
+                  src="/Pick-Pack.png"
                   width={250}
                   height={250}
-                  alt={"dcm.png"}
+                  alt={"Pick-Pack.png"}
                 />
               </div>
               <div className="col-6">
