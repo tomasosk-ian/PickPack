@@ -20,7 +20,7 @@ import {
 } from "./helpers";
 import { env } from "~/env";
 
-const bearer_token = env.TOKEN_EMPRESA;
+const bearer_token = env.TOKEN_EMPRESA!;
 
 export async function POST(request: NextRequest) {
   const webhook: LockerWebhook = await request.json();
@@ -66,7 +66,6 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
   if (deliveryTokenReservation?.Token2) {
     return NextResponse.json({ status: 200 });
   }
-  // console.log('Reservation:', deliveryTokenReservation)
   await db
     .update(reservas)
     .set({ IdFisico: webhookData.Box })

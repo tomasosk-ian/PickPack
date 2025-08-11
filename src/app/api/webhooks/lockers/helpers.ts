@@ -65,7 +65,7 @@ export async function sendPackageDeliveredEmail({
 
 				<p>El paquete destinado a su locker reservado en ${lockerAddress} fue entregado. Le recordamos que el tiempo límite para pasarlo a buscar es ${horaFin} del ${fechaFin}</p>
 
-				<p><strong>Su código de acceso (Token) para el locker que contiene su paquete es ${userToken}</strong></p>
+				<p><strong>Su código de acceso (Token) para retirar su paquete es ${userToken}</strong></p>
 
 				<p>Atentamente,</p>
 				<p>el equipo de <strong>PickPack</strong></p>

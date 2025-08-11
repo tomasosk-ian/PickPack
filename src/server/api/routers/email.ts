@@ -55,7 +55,7 @@ export const emailRouter = createTRPCRouter({
         const msg = {
           to: input.to,
           from: `${env.MAIL_SENDER}`,
-          subject: `Confirmación de reserva locker N° ${input.nReserve}.`,
+          subject: `PICKPACK: Confirmación de reserva de locker`,
           html: `
          
           <body>
@@ -76,7 +76,7 @@ export const emailRouter = createTRPCRouter({
           <p>
             ${input.token
               .map((x) => {
-                return `Su código de reserva es <strong>${x[0]} (${x[1]})</strong><br>`;
+                return `El código de acceso (token) para guardar su paquete es <strong>${x[0]} (${x[1]})</strong><br>`;
               })
               .join("")}
           </p>
@@ -87,6 +87,7 @@ export const emailRouter = createTRPCRouter({
 
           
           <p>Atentamente,</p>
+				  <p>el equipo de <strong>PickPack</strong></p>
           
           
         </body>`,
