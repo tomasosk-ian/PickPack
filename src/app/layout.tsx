@@ -12,7 +12,7 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "DCM Solutions",
+  title: "PickPack",
   description: "Sistema de reserva de lockers",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
