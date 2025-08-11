@@ -57,6 +57,11 @@ export default function UserForm({ t, ...props }: {
   const [discountCode, setDiscountCode] = useState<string>("");
   const [applyButton, setApplyButton] = useState<boolean>();
 
+  const { data: tycData } = api.config.getKey.useQuery({
+    entityId: props.store?.entidadId ?? props.client.entidadId ?? "",
+    key: "tyc_link"
+  });
+
   useEffect(() => {
     const phoneNumbers: Record<string, number>[] = [];
     Object.entries(countries).forEach(([countryCode, countryData]) => {
@@ -237,9 +242,7 @@ export default function UserForm({ t, ...props }: {
           <i
             className="hover:underline"
             onClick={() => {
-              open(
-                "https://lockersurbanos.com.ar/wp-content/uploads/2024/05/Terminos-y-condiciones-Lockers-Urbanos.pdf",
-              );
+              open(tycData?.value ?? "");
             }}
           >
             {t("userFormTOS")}
