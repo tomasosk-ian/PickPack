@@ -3,28 +3,31 @@ import {
   EVENTS,
   type TokenUseResponseData,
   type LockerWebhook,
-  type TokenRequestEditionBody,
   type TokenRequestCreationBody,
 } from "./types";
 import { db } from "~/server/db";
 import { Reserve } from "~/server/api/routers/reserves";
-import { reservas, stores, storesLockers } from "~/server/db/schema";
+import { reservas } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
 import {
   addTokenToServer,
-  editTokenToServer,
   isWithinDates,
   sendPackageDeliveredEmail,
   sendGoodbyeEmail,
-  addMinutes,
+  editTokenToServerWithStoreExtraTime,
+  getLockerAddress,
 } from "./helpers";
 import { env } from "~/env";
 
 const bearer_token = env.TOKEN_EMPRESA!;
 
 export async function POST(request: NextRequest) {
+  if (!bearer_token) {
+    console.error("!bearer_token, falta env.TOKEN_EMPRESA");
+    return NextResponse.json({ status: 500 });
+  }
   const webhook: LockerWebhook = await request.json();
-  console.log(webhook);
+
   switch (webhook.evento) {
     case EVENTS.TOKEN_USE_RESPONSE:
       await tokenUseResponseHandler(webhook);
@@ -35,18 +38,14 @@ export async function POST(request: NextRequest) {
 }
 
 async function tokenUseResponseHandler(webhook: LockerWebhook) {
-  if (!bearer_token) {
-    console.error("!bearer_token, falta env.TOKEN_EMPRESA");
-    return NextResponse.json({ status: 500 });
-  }
 
   const webhookData: TokenUseResponseData = JSON.parse(
     webhook.data as unknown as string,
   );
-  console.log(webhookData)
 
-  if (webhookData.Respuesta === "Rechazado")
-    return NextResponse.json({ status: 200 });
+  if (webhookData.Respuesta === "Rechazado") {
+    return
+  }
 
   const lockerReservations: Reserve[] = await db
     .select()
@@ -58,54 +57,52 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
       isWithinDates(reservation.FechaInicio!, reservation.FechaFin!)
     );
   });
+
   if (userTokenReservation) {
-    //TODO: Evitar el reenviado de mail y cambiarle fecha fin al tiempo extra configurado
+    if (userTokenReservation.Token2Used) {
+      return
+    }
+
+    await db
+      .update(reservas)
+      .set({ Token2Used: true })
+      .where(eq(reservas.identifier, userTokenReservation.identifier!));
+
+    const editDeliveryTokenResponse = await editTokenToServerWithStoreExtraTime(
+      webhookData.Token,
+      webhook,
+      bearer_token
+    )
+    if (!editDeliveryTokenResponse.ok) {
+      //TODO: Manejar el caso en el que falla el servidor, enviando un mail a algún administrador por ejemplo
+      console.log("El servidor falló editando un token")
+    }
     await sendGoodbyeEmail({ to: userTokenReservation!.client! });
-    return NextResponse.json({ status: 200 });
+    return
   }
 
   const deliveryTokenReservation = lockerReservations.find((reservation) => {
     return reservation.Token1 === parseInt(webhookData.Token);
   });
   if (deliveryTokenReservation?.Token2) {
-    return NextResponse.json({ status: 200 });
+    return
   }
   await db
     .update(reservas)
     .set({ IdFisico: webhookData.Box })
     .where(eq(reservas.identifier, deliveryTokenReservation?.identifier!));
 
-  const tokenUseExtraTimeDbResult = await db
-    .select({ tokenUseExtraTime: stores.firstTokenUseTime })
-    .from(stores)
-    .innerJoin(storesLockers, eq(stores.identifier, storesLockers.storeId))
-    .where(eq(storesLockers.serieLocker, webhook.nroSerieLocker));
-  const { tokenUseExtraTime } = tokenUseExtraTimeDbResult[0]!;
-
-  const deliveryTokenEndDate = addMinutes(
-    webhook.fechaCreacion,
-    tokenUseExtraTime!,
-  );
-  // console.log('webhook time:', webhook.fechaCreacion)
-  // console.log('delivery token use time limit:', deliveryTokenEndDate)
-
-  const tokenEditBody: TokenRequestEditionBody = {
-    token1: deliveryTokenReservation?.Token1!.toString()!,
-    fechaFin: deliveryTokenEndDate,
-    idBox: -1, //Necesita este valor para que mantenga el box que ya tenía asignado
-  };
-  const editDeliveryTokenResponse = await editTokenToServer(
-    tokenEditBody,
-    webhook.nroSerieLocker,
-    bearer_token,
-  );
+  const editDeliveryTokenResponse = await editTokenToServerWithStoreExtraTime(
+    webhookData.Token,
+    webhook,
+    bearer_token
+  )
   if (!editDeliveryTokenResponse.ok) {
     const error = await editDeliveryTokenResponse.text();
     console.log("Token edition error message:", error);
-    return NextResponse.json({ status: 200 });
+    return
   }
   const newTokenStartDate = webhook.fechaCreacion.split(".")[0];
-  console.log("user token use time limit:", deliveryTokenEndDate);
 
   const newToken: TokenRequestCreationBody = {
     idSize: deliveryTokenReservation?.IdSize!,
@@ -122,7 +119,7 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
   if (!userTokenCreationResponse.ok) {
     const userTokenCreationError = await userTokenCreationResponse.text();
     console.log("Token creation error message:", userTokenCreationError);
-    return NextResponse.json({ status: 200 });
+    return
   }
   const token2 = await userTokenCreationResponse.text();
   await db
@@ -130,12 +127,7 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
     .set({ Token2: parseInt(token2) })
     .where(eq(reservas.identifier, deliveryTokenReservation?.identifier!));
 
-  const lockerAddressDbResult = await db
-    .select({ lockerAddress: stores.address })
-    .from(stores)
-    .innerJoin(storesLockers, eq(stores.identifier, storesLockers.storeId))
-    .where(eq(storesLockers.serieLocker, webhook.nroSerieLocker));
-  const { lockerAddress } = lockerAddressDbResult[0]!;
+  const lockerAddress = await getLockerAddress(webhook.nroSerieLocker)
   await sendPackageDeliveredEmail({
     to: deliveryTokenReservation?.client!,
     checkoutTime: deliveryTokenReservation?.FechaFin!,
@@ -143,3 +135,4 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
     lockerAddress: lockerAddress!,
   });
 }
+

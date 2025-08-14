@@ -1,7 +1,10 @@
-import { TokenRequestCreationBody, TokenRequestEditionBody } from "./types";
+import { LockerWebhook, TokenRequestCreationBody, TokenRequestEditionBody } from "./types";
 import sendgrid from "@sendgrid/mail";
 import { Html, render } from "@react-email/components";
+import { db } from "~/server/db";
 import { env } from "~/env";
+import { stores, storesLockers } from "~/server/db/schema";
+import { eq } from "drizzle-orm";
 
 const base_url = "https://testing.server.dcm.com.ar/api/v2/token";
 
@@ -140,4 +143,52 @@ export function addMinutes(base: string, toAdd: number): string {
 	const baseDate = new Date(base);
 	baseDate.setMinutes(baseDate.getMinutes() + toAdd - 60 * 3); //GMT-3
 	return baseDate.toISOString().split(".")[0]!;
+}
+
+export async function getTokenUseExtraTime(lockerSerial: string) {
+	const tokenUseExtraTimeDbResult = await db
+		.select({ tokenUseExtraTime: stores.firstTokenUseTime })
+		.from(stores)
+		.innerJoin(storesLockers, eq(stores.identifier, storesLockers.storeId))
+		.where(eq(storesLockers.serieLocker, lockerSerial));
+	const { tokenUseExtraTime } = tokenUseExtraTimeDbResult[0]!;
+	return tokenUseExtraTime
+}
+
+export async function editTokenToServerWithStoreExtraTime(
+	token: string,
+	webhook: LockerWebhook,
+	bearerToken: string
+) {
+
+	const tokenUseExtraTime = await getTokenUseExtraTime(webhook.nroSerieLocker)
+
+	const tokenEndDate = addMinutes(
+		webhook.fechaCreacion,
+		tokenUseExtraTime!,
+	);
+
+	const tokenEditBody: TokenRequestEditionBody = {
+		token1: token,
+		fechaFin: tokenEndDate,
+		idBox: -1, //Necesita este valor para que mantenga el box que ya tenía asignado
+	};
+
+	const editDeliveryTokenResponse = await editTokenToServer(
+		tokenEditBody,
+		webhook.fechaCreacion,
+		bearerToken,
+	);
+
+	return editDeliveryTokenResponse
+}
+
+export async function getLockerAddress(lockerSerial: string) {
+	const lockerAddressDbResult = await db
+		.select({ lockerAddress: stores.address })
+		.from(stores)
+		.innerJoin(storesLockers, eq(stores.identifier, storesLockers.storeId))
+		.where(eq(storesLockers.serieLocker, lockerSerial));
+	const { lockerAddress } = lockerAddressDbResult[0]!;
+	return lockerAddress
 }

@@ -30,6 +30,7 @@ export type Reserve = {
   FechaCreacion: string | null;
   FechaInicio: string | null;
   FechaFin: string | null;
+  Token2Used: boolean;
   Contador: number | null;
   client: string | null;
 };
@@ -190,7 +191,7 @@ export const reserveRouter = createTRPCRouter({
     )
     .query(async ({ input, ctx }) => {
       await trpcTienePermisoCtx(ctx, "panel:clientes");
-      
+
       checkBoxAssigned(ctx.orgId ?? "");
       const result = await ctx.db.query.reservas.findMany({
         with: { clients: true },
@@ -372,7 +373,7 @@ export async function checkBoxAssigned(entityId: string) {
   if (!tkValue) {
     throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: "Sin token de empresa" });
   }
-  
+
   // Realiza una solicitud a la API para obtener los datos de lockers asignados por empresa.
   const locerResponse = await fetch(
     `${env.SERVER_URL}/api/locker/byTokenEmpresa/${env.TOKEN_EMPRESA}`,

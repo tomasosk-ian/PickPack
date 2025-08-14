@@ -199,6 +199,7 @@ export const reservas = sqliteTable(
     FechaFin: text("FechaFin", { length: 255 }),
     Contador: integer("Contador"),
     Confirmado: integer("Confirmado", { mode: "boolean" }).default(false),
+    Token2Used: integer("Token2Used", { mode: "boolean" }).default(false).notNull(),
     Modo: text("Modo", { length: 255 }),
     Cantidad: integer("Cantidad"),
     IdTransaction: integer("IdTransaction"),
@@ -397,7 +398,7 @@ export const userRoles = sqliteTable(
   {
     userId: text("userId")
       .notNull(),
-      // .references(() => users.id, { onDelete: "cascade" }),
+    // .references(() => users.id, { onDelete: "cascade" }),
     roleId: text("roleId")
       .notNull()
       .references(() => roles.id, { onDelete: "cascade" }),
@@ -429,7 +430,7 @@ export const usuarioEntidad = sqliteTable(
     id: columnId,
     userId: text("userId")
       .notNull(),
-      // .references(() => users.id, { onDelete: "cascade" }),
+    // .references(() => users.id, { onDelete: "cascade" }),
     entidadId: text("entidadId")
       .notNull()
       .references(() => companies.id, { onDelete: "cascade" }),
