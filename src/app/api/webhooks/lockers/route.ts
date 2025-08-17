@@ -28,6 +28,8 @@ export async function POST(request: NextRequest) {
   }
   const webhook: LockerWebhook = await request.json();
 
+  console.log(webhook)
+
   switch (webhook.evento) {
     case EVENTS.TOKEN_USE_RESPONSE:
       await tokenUseResponseHandler(webhook);
@@ -60,22 +62,26 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
 
   if (userTokenReservation) {
     if (userTokenReservation.Token2Used) {
+      console.log(`Token de usuario ${webhookData.Token}, uso repetido`)
       return
     }
+
+    console.log(`Token de usuario ${webhookData.Token}, primer uso`)
 
     await db
       .update(reservas)
       .set({ Token2Used: true })
       .where(eq(reservas.identifier, userTokenReservation.identifier!));
 
-    const editDeliveryTokenResponse = await editTokenToServerWithStoreExtraTime(
+    const editUserTokenResponse = await editTokenToServerWithStoreExtraTime(
       webhookData.Token,
       webhook,
       bearer_token
     )
-    if (!editDeliveryTokenResponse.ok) {
+    if (!editUserTokenResponse.ok) {
       //TODO: Manejar el caso en el que falla el servidor, enviando un mail a algún administrador por ejemplo
-      console.log("El servidor falló editando un token")
+      const error = await editUserTokenResponse.text();
+      console.log(`El servidor falló editando el token de usuario ${webhookData.Token} con el siguiente mensaje de error: ${error}`)
     }
     await sendGoodbyeEmail({ to: userTokenReservation!.client! });
     return
@@ -85,8 +91,12 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
     return reservation.Token1 === parseInt(webhookData.Token);
   });
   if (deliveryTokenReservation?.Token2) {
+    console.log(`Token de repartidor ${webhookData.Token}, uso repetido`)
     return
   }
+
+  console.log(`Token de repartidor ${webhookData.Token}, primer uso`)
+
   await db
     .update(reservas)
     .set({ IdFisico: webhookData.Box })
@@ -99,7 +109,7 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
   )
   if (!editDeliveryTokenResponse.ok) {
     const error = await editDeliveryTokenResponse.text();
-    console.log("Token edition error message:", error);
+    console.log(`El servidor falló editando el token de repartidor ${webhookData.Token} con el siguiente mensaje de error: ${error}`)
     return
   }
   const newTokenStartDate = webhook.fechaCreacion.split(".")[0];
@@ -117,8 +127,8 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
     bearer_token,
   );
   if (!userTokenCreationResponse.ok) {
-    const userTokenCreationError = await userTokenCreationResponse.text();
-    console.log("Token creation error message:", userTokenCreationError);
+    const error = await userTokenCreationResponse.text();
+    console.log(`El servidor falló creando un nuevo token de usuario para el token de repartidor ${webhookData.Token} con el siguiente mensaje de error: ${error}`)
     return
   }
   const token2 = await userTokenCreationResponse.text();
