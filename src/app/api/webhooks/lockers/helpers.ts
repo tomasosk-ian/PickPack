@@ -5,6 +5,7 @@ import { db } from "~/server/db";
 import { env } from "~/env";
 import { stores, storesLockers } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
+import { basename } from "node:path";
 
 const base_url = "https://testing.server.dcm.com.ar/api/v2/token";
 
@@ -175,6 +176,7 @@ export async function editTokenToServerWithStoreExtraTime(
 	};
 
 	console.log("Petición al servidor para editar con el siguiente body:", tokenEditBody)
+	console.log("Bearer token:", bearerToken)
 
 	const editDeliveryTokenResponse = await editTokenToServer(
 		tokenEditBody,
