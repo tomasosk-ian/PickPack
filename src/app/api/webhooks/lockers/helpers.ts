@@ -179,8 +179,8 @@ export async function editTokenToServerWithStoreExtraTime(
 
 	const editDeliveryTokenResponse = await editTokenToServer(
 		tokenEditBody,
+		webhook.nroSerieLocker,
 		bearerToken,
-		webhook.fechaCreacion,
 	);
 
 	return editDeliveryTokenResponse
