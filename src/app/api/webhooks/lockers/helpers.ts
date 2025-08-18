@@ -174,6 +174,8 @@ export async function editTokenToServerWithStoreExtraTime(
 		idBox: -1, //Necesita este valor para que mantenga el box que ya tenía asignado
 	};
 
+	console.log("Petición al servidor para editar con el siguiente body:", tokenEditBody)
+
 	const editDeliveryTokenResponse = await editTokenToServer(
 		tokenEditBody,
 		webhook.fechaCreacion,

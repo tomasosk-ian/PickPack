@@ -129,6 +129,7 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
   if (!userTokenCreationResponse.ok) {
     const error = await userTokenCreationResponse.text();
     console.log(`El servidor falló creando un nuevo token de usuario para el token de repartidor ${webhookData.Token} con el siguiente mensaje de error: ${error}`)
+    console.log("Con el siguiente body:", newToken)
     return
   }
   const token2 = await userTokenCreationResponse.text();
