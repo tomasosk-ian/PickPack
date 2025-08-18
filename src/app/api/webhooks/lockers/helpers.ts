@@ -176,12 +176,11 @@ export async function editTokenToServerWithStoreExtraTime(
 	};
 
 	console.log("Petición al servidor para editar con el siguiente body:", tokenEditBody)
-	console.log("Bearer token:", bearerToken)
 
 	const editDeliveryTokenResponse = await editTokenToServer(
 		tokenEditBody,
-		webhook.fechaCreacion,
 		bearerToken,
+		webhook.fechaCreacion,
 	);
 
 	return editDeliveryTokenResponse
