@@ -201,25 +201,13 @@ export default async function Home() {
           content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"
         />
         <meta name="theme-color" content="#5b9a8b" />
-        <title>DCM Solutions</title>
+        <title>PickPack</title>
         <meta name="robots" content="max-image-preview:large" />
-        <link
-          rel="alternate"
-          type="application/rss+xml"
-          title="DCM Solutions » Feed"
-          href="https://dcm.com.ar/feed/"
-        />
-        <link
-          rel="alternate"
-          type="application/rss+xml"
-          title="DCM Solutions » Feed de los comentarios"
-          href="https://dcm.com.ar/comments/feed/"
-        />
-        <link rel="canonical" href="https://dcm.com.ar/" />
+        <link rel="canonical" href="https://pickpack.com.ar/" />
 
-        <meta property="og:site_name" content="DCM Solutions" />
+        <meta property="og:site_name" content="PickPack" />
         <meta property="og:title" content="Home" />
-        <meta property="og:url" content="https://dcm.com.ar/" />
+        <meta property="og:url" content="https://pickpack.com.ar/" />
         <meta property="og:type" content="website" />
         <link rel="profile" href="https://gmpg.org/xfn/11" />
         <link
