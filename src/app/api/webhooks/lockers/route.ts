@@ -16,6 +16,8 @@ import {
   sendGoodbyeEmail,
   editTokenToServerWithStoreExtraTime,
   getLockerAddress,
+  getTokenUseExtraTime,
+  addMinutes,
 } from "./helpers";
 import { env } from "~/env";
 
@@ -68,9 +70,15 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
 
     console.log(`Token de usuario ${webhookData.Token}, primer uso`)
 
+    const tokenUseExtraTime = await getTokenUseExtraTime(webhook.nroSerieLocker)
+
+    const reservationEndDate = addMinutes(
+      webhook.fechaCreacion,
+      tokenUseExtraTime!,
+    );
     await db
       .update(reservas)
-      .set({ Token2Used: true })
+      .set({ Token2Used: true, FechaFin: reservationEndDate })
       .where(eq(reservas.identifier, userTokenReservation.identifier!));
 
     const editUserTokenResponse = await editTokenToServerWithStoreExtraTime(

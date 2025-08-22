@@ -18,6 +18,7 @@ import { getClientByEmail } from "./lockerReserveRouter";
 import { TRPCError } from "@trpc/server";
 import { trpcTienePermisoCtx } from "~/lib/roles";
 import { PrivateConfigKeys } from "~/lib/config";
+import { isWithinDates } from "~/app/api/webhooks/lockers/helpers";
 
 export type Reserve = {
   identifier: string | null;
@@ -80,15 +81,9 @@ export const reserveRouter = createTRPCRouter({
       with: { clients: true },
     });
 
-    const now = new Date().getTime() - 3 * 60 * 60 * 1000;
 
-    // Obtener el inicio y fin del día utilizando la configuración de idioma español
-    const startOfDayLocale = startOfDay(now);
-    const endOfDayLocale = endOfDay(now);
-
-    const actives = result.filter((x) => {
-      const fechaFin = new Date(x.FechaFin!);
-      return isAfter(fechaFin, startOfDayLocale);
+    const actives = result.filter((reservation) => {
+      return isWithinDates(reservation.FechaInicio!, reservation.FechaFin!)
     });
 
     const groupedByNReserve = actives.reduce((acc: any, reserva) => {
