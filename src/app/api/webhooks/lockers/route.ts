@@ -110,8 +110,6 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
     .set({ IdFisico: webhookData.Box })
     .where(eq(reservas.identifier, deliveryTokenReservation?.identifier!));
 
-  console.log("update box", webhookData.Box)
-
   const editDeliveryTokenResponse = await editTokenToServerWithStoreExtraTime(
     webhookData.Token,
     webhook,
