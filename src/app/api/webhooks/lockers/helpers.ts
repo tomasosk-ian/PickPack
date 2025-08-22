@@ -163,6 +163,7 @@ export async function editTokenToServerWithStoreExtraTime(
 ) {
 
 	const tokenUseExtraTime = await getTokenUseExtraTime(webhook.nroSerieLocker)
+	console.log("got extra time:", tokenUseExtraTime)
 
 	const tokenEndDate = addMinutes(
 		webhook.fechaCreacion,
