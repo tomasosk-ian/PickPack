@@ -32,9 +32,9 @@ export function About() {
               </div>
               <div className="col-6">
                 <AlertDialogTitle className="pb-4">
-                  Versión 10.0.0
+                  Versión 10.0.1
                 </AlertDialogTitle>
-                <AlertDialogTitle>Fecha: 27 de junio de 2025</AlertDialogTitle>
+                <AlertDialogTitle>Fecha: 22 de agosto de 2025</AlertDialogTitle>
               </div>
             </div>
             <AlertDialogDescription>
@@ -42,7 +42,7 @@ export function About() {
             </AlertDialogDescription>
 
             <AlertDialogDescription>
-              <a>Copyright © 2024 Lockers Inteligentes DCM Solution S.A.</a>
+              <a>Copyright © 2025 Lockers Inteligentes DCM Solution S.A.</a>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

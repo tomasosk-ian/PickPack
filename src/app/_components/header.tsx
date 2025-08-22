@@ -30,7 +30,7 @@ export default function Home({ lang }: { lang?: string }) {
             <div id="site-description" className="assistive-text">
               Recibe tus paquetes donde quieras
             </div>
-            <a className="" href="https://pickpack.com.ar/">
+            <a className="" href="/">
               <img
                 className="preload-me"
                 src="./Pick-Pack.png"

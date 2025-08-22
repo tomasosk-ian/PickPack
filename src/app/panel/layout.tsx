@@ -19,7 +19,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
           <body>
             <main>
               <AppLayout
-                title={<h1>DCM Solution</h1>}
+                title={<h1>PickPack</h1>}
                 sidenav={<AppSidenav />}
               >
                 <div className="mb-10 flex justify-center">

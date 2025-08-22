@@ -206,7 +206,7 @@ export default function StorePage(props: {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="tokenUseTime">Minutos para caducar el primer token</Label>
+                    <Label htmlFor="tokenUseTime">Minutos para caducar los tokens tras el primer uso</Label>
                     <Input
                       id="tokenUseTime"
                       value={firstTokenUseTime!}
