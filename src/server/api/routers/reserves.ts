@@ -374,7 +374,7 @@ export async function checkBoxAssigned(entityId: string) {
 
   // Realiza una solicitud a la API para obtener los datos de lockers asignados por empresa.
   const locerResponse = await fetch(
-    `${env.SERVER_URL}/api/locker/byTokenEmpresa/${tkValue}`,
+    `${env.SERVER_URL}/api/locker/byTokenEmpresa/${tkValue.value}`,
   );
 
   const reservedBoxData = await locerResponse.json();

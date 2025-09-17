@@ -22,12 +22,12 @@ import {
 import { PrivateConfigKeys } from "~/lib/config";
 
  const tk: PrivateConfigKeys = "token_empresa";
-  const bearer_token = await db.query.privateConfig.findFirst({
+  const bearer_token = (await db.query.privateConfig.findFirst({
     where: and(
       eq(schema.privateConfig.key, tk),
       eq(schema.privateConfig.entidadId, schema.privateConfig.entidadId),
     ),
-  })!;
+  }))?.value!;
 export async function POST(request: NextRequest) {
 
   if (!bearer_token) {
@@ -90,7 +90,7 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
     const editUserTokenResponse = await editTokenToServerWithStoreExtraTime(
       webhookData.Token,
       webhook,
-      bearer_token?.entidadId!
+bearer_token
     )
     if (!editUserTokenResponse.ok) {
       //TODO: Manejar el caso en el que falla el servidor, enviando un mail a algún administrador por ejemplo
@@ -119,7 +119,7 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
   const editDeliveryTokenResponse = await editTokenToServerWithStoreExtraTime(
     webhookData.Token,
     webhook,
-      bearer_token?.entidadId!
+bearer_token
   )
       console.log("Bearer token:", bearer_token)
 
@@ -140,7 +140,7 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
   const userTokenCreationResponse = await addTokenToServer(
     newToken,
     webhook.nroSerieLocker,
-          bearer_token?.entidadId!
+    bearer_token
 
   );
   if (!userTokenCreationResponse.ok) {

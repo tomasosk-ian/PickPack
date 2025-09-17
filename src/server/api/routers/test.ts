@@ -40,19 +40,19 @@ export const testRouter = createTRPCRouter({
           defaultEntidad = res!;
         }
 
-        const tk: PrivateConfigKeys = 'token_empresa';
-        const tkEmp = await db.query.privateConfig.findFirst({
-          where: and(
-            eq(schema.privateConfig.entidadId, defaultEntidad.id),
-            eq(schema.privateConfig.key, tk)
-          )
-        });
+        const tk: PrivateConfigKeys = "token_empresa";
+         const tkValue = await db.query.privateConfig.findFirst({
+           where: and(
+             eq(schema.privateConfig.key, tk),
+             eq(schema.privateConfig.entidadId, entityId),
+           ),
+         });
 
-        if (!tkEmp && tkEmp) {
+        if (!tkValue ) {
           await db.insert(schema.privateConfig)
             .values({
               key: tk,
-              value: tkEmp,
+              value: tkValue!.value,
               entidadId: defaultEntidad.id
             });
         }
