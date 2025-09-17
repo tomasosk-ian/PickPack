@@ -28,7 +28,6 @@ export const env = createEnv({
     SENDGRID_API_KEY: z.string(),
     MAIL_SENDER: z.string(),
 
-    TOKEN_EMPRESA: z.string().optional(),
     CLERK_SECRET_KEY: z.string(),
   },
 
@@ -55,7 +54,6 @@ export const env = createEnv({
     SERVER_URL: process.env.SERVER_URL,
     SENDGRID_API_KEY: process.env.SENDGRID_API_KEY,
     MAIL_SENDER: process.env.MAIL_SENDER,
-    TOKEN_EMPRESA: process.env.TOKEN_EMPRESA,
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
     CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY,

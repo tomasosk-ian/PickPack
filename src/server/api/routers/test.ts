@@ -48,11 +48,11 @@ export const testRouter = createTRPCRouter({
           )
         });
 
-        if (!tkEmp && env.TOKEN_EMPRESA) {
+        if (!tkEmp && tkEmp) {
           await db.insert(schema.privateConfig)
             .values({
               key: tk,
-              value: env.TOKEN_EMPRESA,
+              value: tkEmp,
               entidadId: defaultEntidad.id
             });
         }

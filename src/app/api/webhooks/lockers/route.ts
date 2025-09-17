@@ -5,10 +5,10 @@ import {
   type LockerWebhook,
   type TokenRequestCreationBody,
 } from "./types";
-import { db } from "~/server/db";
+import { db, schema } from "~/server/db";
 import { Reserve } from "~/server/api/routers/reserves";
 import { reservas } from "~/server/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import {
   addTokenToServer,
   isWithinDates,
@@ -19,11 +19,17 @@ import {
   getTokenUseExtraTime,
   addMinutes,
 } from "./helpers";
-import { env } from "~/env";
+import { PrivateConfigKeys } from "~/lib/config";
 
-const bearer_token = env.TOKEN_EMPRESA!;
-
+ const tk: PrivateConfigKeys = "token_empresa";
+  const bearer_token = await db.query.privateConfig.findFirst({
+    where: and(
+      eq(schema.privateConfig.key, tk),
+      eq(schema.privateConfig.entidadId, schema.privateConfig.entidadId),
+    ),
+  })!;
 export async function POST(request: NextRequest) {
+
   if (!bearer_token) {
     console.error("!bearer_token, falta env.TOKEN_EMPRESA");
     return NextResponse.json({ status: 500 });
@@ -84,7 +90,7 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
     const editUserTokenResponse = await editTokenToServerWithStoreExtraTime(
       webhookData.Token,
       webhook,
-      bearer_token
+      bearer_token?.entidadId!
     )
     if (!editUserTokenResponse.ok) {
       //TODO: Manejar el caso en el que falla el servidor, enviando un mail a algún administrador por ejemplo
@@ -113,7 +119,7 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
   const editDeliveryTokenResponse = await editTokenToServerWithStoreExtraTime(
     webhookData.Token,
     webhook,
-    bearer_token
+      bearer_token?.entidadId!
   )
   if (!editDeliveryTokenResponse.ok) {
     const error = await editDeliveryTokenResponse.text();
@@ -132,7 +138,8 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
   const userTokenCreationResponse = await addTokenToServer(
     newToken,
     webhook.nroSerieLocker,
-    bearer_token,
+          bearer_token?.entidadId!
+
   );
   if (!userTokenCreationResponse.ok) {
     const error = await userTokenCreationResponse.text();

@@ -52,7 +52,7 @@ export const reserveRouter = createTRPCRouter({
         and(
           isNotNull(reservas.nReserve),
           isNotNull(reservas.Token1),
-          eq(schema.reservas.entidadId, ctx.orgId ?? "")
+          eq(schema.reservas.entidadId, ctx.orgId ?? ""),
         ),
     });
 
@@ -76,14 +76,13 @@ export const reserveRouter = createTRPCRouter({
         and(
           isNotNull(reservas.nReserve),
           isNotNull(reservas.Token1),
-          eq(schema.reservas.entidadId, ctx.orgId ?? "")
+          eq(schema.reservas.entidadId, ctx.orgId ?? ""),
         ),
       with: { clients: true },
     });
 
-
     const actives = result.filter((reservation) => {
-      return isWithinDates(reservation.FechaInicio!, reservation.FechaFin!)
+      return isWithinDates(reservation.FechaInicio!, reservation.FechaFin!);
     });
 
     const groupedByNReserve = actives.reduce((acc: any, reserva) => {
@@ -223,12 +222,12 @@ export const reserveRouter = createTRPCRouter({
       const cl = await db.query.clients.findFirst({
         where: and(
           eq(schema.clients.identifier, input.clientId),
-          eq(schema.clients.entidadId, input.entityId)
-        )
+          eq(schema.clients.entidadId, input.entityId),
+        ),
       });
 
       if (!cl) {
-        throw new TRPCError({ code: 'NOT_FOUND' });
+        throw new TRPCError({ code: "NOT_FOUND" });
       }
 
       const result = await db
@@ -302,10 +301,12 @@ export const reserveRouter = createTRPCRouter({
       const response = await db
         .update(reservas)
         .set({ FechaFin: input.FechaFin, FechaInicio: input.FechaInicio })
-        .where(and(
-          eq(reservas.identifier, input.identifier),
-          eq(reservas.entidadId, ctx.orgId ?? ""),
-        ))
+        .where(
+          and(
+            eq(reservas.identifier, input.identifier),
+            eq(reservas.entidadId, ctx.orgId ?? ""),
+          ),
+        )
         .returning();
       return response[0] as Reserve;
     }),
@@ -320,19 +321,19 @@ export const reserveRouter = createTRPCRouter({
       await trpcTienePermisoCtx(ctx, "panel:reservas");
       await db
         .delete(schema.reservas)
-        .where(and(
-          eq(schema.reservas.nReserve, input.nReserve),
-          eq(reservas.entidadId, ctx.orgId ?? ""),
-        ));
+        .where(
+          and(
+            eq(schema.reservas.nReserve, input.nReserve),
+            eq(reservas.entidadId, ctx.orgId ?? ""),
+          ),
+        );
     }),
   getLastReserveByBox: protectedProcedure.query(async ({ ctx }) => {
     // Obtener las reservas ordenadas por FechaFin descendente
     const reservas = await ctx.db.query.reservas.findMany({
       with: { clients: true },
-      where: (reservas) => and(
-        isNotNull(reservas.IdBox),
-        eq(reservas.entidadId, ctx.orgId ?? ""),
-      ),
+      where: (reservas) =>
+        and(isNotNull(reservas.IdBox), eq(reservas.entidadId, ctx.orgId ?? "")),
       orderBy: (reservas, { desc }) => [desc(reservas.FechaFin)],
       // limit: 1, // Si solo necesitas la última reserva por IdBox, usa limit aquí.
     });
@@ -352,26 +353,28 @@ export const reserveRouter = createTRPCRouter({
 
 export type Reserves = RouterOutputs["reserve"]["getBynReserve"][number];
 
-
 /**
  * Función para verificar y asignar lockers a partir de un API y procesar las actualizaciones correspondientes en la base de datos.
  */
 export async function checkBoxAssigned(entityId: string) {
-  const tk: PrivateConfigKeys = 'token_empresa';
+  const tk: PrivateConfigKeys = "token_empresa";
   const tkValue = await db.query.privateConfig.findFirst({
     where: and(
       eq(schema.privateConfig.key, tk),
-      eq(schema.privateConfig.entidadId, entityId)
-    )
+      eq(schema.privateConfig.entidadId, entityId),
+    ),
   });
 
   if (!tkValue) {
-    throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: "Sin token de empresa" });
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Sin token de empresa",
+    });
   }
 
   // Realiza una solicitud a la API para obtener los datos de lockers asignados por empresa.
   const locerResponse = await fetch(
-    `${env.SERVER_URL}/api/locker/byTokenEmpresa/${env.TOKEN_EMPRESA}`,
+    `${env.SERVER_URL}/api/locker/byTokenEmpresa/${tkValue}`,
   );
 
   const reservedBoxData = await locerResponse.json();
