@@ -31,7 +31,7 @@ import { PrivateConfigKeys } from "~/lib/config";
 export async function POST(request: NextRequest) {
 
   if (!bearer_token) {
-    console.error("!bearer_token, falta env.TOKEN_EMPRESA");
+    console.error("!bearer_token, falta token_empresa");
     return NextResponse.json({ status: 500 });
   }
   const webhook: LockerWebhook = await request.json();
@@ -121,6 +121,8 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
     webhook,
       bearer_token?.entidadId!
   )
+      console.log("Bearer token:", bearer_token)
+
   if (!editDeliveryTokenResponse.ok) {
     const error = await editDeliveryTokenResponse.text();
     console.log(`El servidor falló editando el token de repartidor ${webhookData.Token} con el siguiente mensaje de error: ${error}`)
