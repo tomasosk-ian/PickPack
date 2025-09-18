@@ -177,7 +177,7 @@ export default function Payment({ t, ...props }: {
   // const [mpPaymentId, setMpPaymentId] = useState("");
 
   async function success() {
-    if (medioConfigurado !== PublicConfigMetodoPago.mobbex) {
+    if (medioConfigurado === PublicConfigMetodoPago.mercadopago) {
       const reserves = await getReserves({
         idTransactions: idTransactions,
         entityId: props.store.entidadId ?? "",
@@ -301,7 +301,6 @@ export default function Payment({ t, ...props }: {
           type: "checkout",
           onResult: (data: any) => {
             // OnResult es llamado cuando se toca el Botón Cerrar
-
             window.MobbexEmbed.close();
           },
           onPayment: async (data: any) => {
@@ -347,35 +346,12 @@ export default function Payment({ t, ...props }: {
           document.body.removeChild(script);
         };
       }
+    } else if (medioConfigurado === PublicConfigMetodoPago.sinpago) {
+      setTimeout(() => {
+        success();
+      }, 500);
     }
   }, [props.checkoutNumber]);
-
-  /* function AlertSuccess() {
-    return (
-      <AlertDialog defaultOpen={true}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Aviso</AlertDialogTitle>
-            <AlertDialogDescription>
-              Se encuentra en un entorno de pruebas, la reserva será aceptada
-              automáticamente sin pasar por un medio de pago.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              onClick={async () => {
-                await success();
-              }}
-            >
-              Aceptar
-            </AlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    );
-  } */
-
-  // const mpDone = useMemo(() => typeof mpPaymentId === 'string' && mpPaymentId !== '', [mpPaymentId]);
 
   return (
     <>

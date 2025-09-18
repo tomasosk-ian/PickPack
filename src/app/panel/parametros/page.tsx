@@ -128,7 +128,7 @@ function FormMetodoPago({ invalidate }: { invalidate: () => void }) {
             </Select>
           </div>
 
-          <div className="font-bold">
+          {(metodo === 'mercadopago' || metodo === 'mobbex') && <div className="font-bold">
             <Label htmlFor="clave1">{metodo === 'mercadopago' ? "Clave pública de Mercado Pago" : 'Clave API de Mobbex'}</Label>
             <Input
               id="clave1"
@@ -136,9 +136,9 @@ function FormMetodoPago({ invalidate }: { invalidate: () => void }) {
               onChange={(e) => setClave1(e.target.value)}
               required
             />
-          </div>
+          </div>}
 
-          <div className="font-bold">
+          {(metodo === 'mercadopago' || metodo === 'mobbex') && <div className="font-bold">
             <Label htmlFor="clave2">{metodo === 'mercadopago' ? "Clave privada de Mercado Pago" : 'Token de acceso de Mobbex'}</Label>
             <Input
               id="clave2"
@@ -146,7 +146,7 @@ function FormMetodoPago({ invalidate }: { invalidate: () => void }) {
               onChange={(e) => setClave2(e.target.value)}
               required
             />
-          </div>
+          </div>}
 
           {metodo === 'mercadopago' && <div className="font-bold">
             <Label htmlFor="clave3">Clave secreta de Webhook de Mercado Pago</Label>
