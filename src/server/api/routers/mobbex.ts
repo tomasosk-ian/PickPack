@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { mobbex } from "mobbex";
 import { env } from "process";
 import { z } from "zod";
-import { PrivateConfigKeys } from "~/lib/config";
+import { PrivateConfigKeys, PublicConfigKeys, PublicConfigMetodoPago } from "~/lib/config";
 
 import {
   createTRPCRouter,
@@ -45,8 +45,21 @@ export const mobbexRouter = createTRPCRouter({
         throw new Error(errorResponse.message || "Unknown error");
       }
 
+      const configMedioPagoKey: PublicConfigKeys = "metodo_pago";
       const configMobbexApiKey: PrivateConfigKeys = "mobbex_api_key";
       const configMobbexAccessToken: PrivateConfigKeys = "mobbex_access_token";
+
+      const medioPago = await ctx.db.query.publicConfig.findFirst({
+        where: and(
+          eq(schema.publicConfig.key, configMedioPagoKey),
+          eq(schema.publicConfig.entidadId, input.entityId),
+        ),
+      });
+
+      if (medioPago?.value !== PublicConfigMetodoPago.mobbex) {
+        console.error("mobbex.test medio pago != mobbex:", medioPago);
+        return "-1";
+      }
 
       const mobbexApiKey = await ctx.db.query.privateConfig.findFirst({
         where: and(

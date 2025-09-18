@@ -7,7 +7,8 @@ export const PublicConfigClaves = {
 
 export enum PublicConfigMetodoPago {
   mercadopago = "mercadopago",
-  mobbex = "mobbex"
+  mobbex = "mobbex",
+  sinpago = "sinpago",
 }
 
 export type PublicConfigMetodoPagoKeys = keyof typeof PublicConfigMetodoPago;
