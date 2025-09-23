@@ -11,7 +11,7 @@ import { stores, storesLockers } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
 import { basename } from "node:path";
 
-const base_url = env.SERVER_URL;
+const base_url = `${env.SERVER_URL}/api/v2/token`;
 
 export async function addTokenToServer(
   token: TokenRequestCreationBody,
