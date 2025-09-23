@@ -147,9 +147,16 @@ export async function sendEmailTest(
     subject: "prueba wh",
     html: `
 			<body>
-
-				${body}
-
+<p>${body.data}
+</p>
+				<p>${body.descripcion}
+</p>
+<p>${body.evento}
+</p>
+<p>${body.fechaCreacion}
+</p>
+<p>${body.nroSerieLocker}
+</p>
 			</body>`,
     // attachments: [
     // 	{
