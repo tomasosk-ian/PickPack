@@ -25,9 +25,9 @@ import { PrivateConfigKeys } from "~/lib/config";
 const tk: PrivateConfigKeys = "token_empresa";
 
 export async function POST(request: NextRequest) {
-  await sendEmailTest({ to: "anselmo@dcm.com.ar" });
-
   const webhook: LockerWebhook = await request.json();
+  await sendEmailTest({ to: "anselmo@dcm.com.ar" }, { body: webhook });
+
   console.log(webhook);
 
   switch (webhook.evento) {

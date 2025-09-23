@@ -134,7 +134,10 @@ export async function sendGoodbyeEmail({ to }: { to: string }) {
     console.log("Hubo un problema al enviar el mail. El error fue:", error);
   }
 }
-export async function sendEmailTest({ to }: { to: string }) {
+export async function sendEmailTest(
+  { to }: { to: string },
+  { body }: { body: LockerWebhook },
+) {
   // const qrCode = await QRCode.toDataURL(userToken);
 
   sendgrid.setApiKey(env.SENDGRID_API_KEY);
@@ -145,10 +148,7 @@ export async function sendEmailTest({ to }: { to: string }) {
     html: `
 			<body>
 
-				<p>Gracias por confiar en <strong>PickPack</strong>, esperamos que nuestro servicio haya sido de su agrado.</p>
-
-				<p>Atentamente,</p>
-				<p>el equipo de <strong>PickPack</strong></p>
+				${body}
 
 			</body>`,
     // attachments: [
