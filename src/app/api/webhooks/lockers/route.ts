@@ -37,17 +37,17 @@ export async function POST(request: NextRequest) {
 }
 
 async function tokenUseResponseHandler(webhook: LockerWebhook) {
-  const store = await db.query.storesLockers.findFirst({
+  const storeRelation = await db.query.storesLockers.findFirst({
     where: eq(schema.storesLockers.serieLocker, webhook.nroSerieLocker),
   });
-  if (!store) {
+  if (!storeRelation) {
     console.log("error, nro de serie no asignado a ningún local");
     return;
   }
-  const entidad = await db.query.stores.findFirst({
-    where: eq(schema.stores.identifier, store.storeId),
+  const store = await db.query.stores.findFirst({
+    where: eq(schema.stores.identifier, storeRelation.storeId),
   });
-  if (!entidad) {
+  if (!store || !store.entidadId) {
     console.log("error, entidad no encontrada");
     return;
   }
@@ -55,7 +55,7 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
     await db.query.privateConfig.findFirst({
       where: and(
         eq(schema.privateConfig.key, tk),
-        eq(schema.privateConfig.entidadId, entidad.identifier),
+        eq(schema.privateConfig.entidadId, store.entidadId),
       ),
     })
   )?.value!;
