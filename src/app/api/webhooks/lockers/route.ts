@@ -22,14 +22,7 @@ import {
 import { PrivateConfigKeys } from "~/lib/config";
 
 const tk: PrivateConfigKeys = "token_empresa";
-const bearer_token = (
-  await db.query.privateConfig.findFirst({
-    where: and(
-      eq(schema.privateConfig.key, tk),
-      eq(schema.privateConfig.entidadId, schema.privateConfig.entidadId),
-    ),
-  })
-)?.value!;
+
 export async function POST(request: NextRequest) {
   const webhook: LockerWebhook = await request.json();
   console.log(webhook);
@@ -44,6 +37,29 @@ export async function POST(request: NextRequest) {
 }
 
 async function tokenUseResponseHandler(webhook: LockerWebhook) {
+  const store = await db.query.storesLockers.findFirst({
+    where: eq(schema.storesLockers.serieLocker, webhook.nroSerieLocker),
+  });
+  if (!store) {
+    console.log("error, nro de serie no asignado a ningún local");
+    return;
+  }
+  const entidad = await db.query.stores.findFirst({
+    where: eq(schema.stores.identifier, store.storeId),
+  });
+  if (!entidad) {
+    console.log("error, entidad no encontrada");
+    return;
+  }
+  const bearer_token = (
+    await db.query.privateConfig.findFirst({
+      where: and(
+        eq(schema.privateConfig.key, tk),
+        eq(schema.privateConfig.entidadId, entidad.identifier),
+      ),
+    })
+  )?.value!;
+
   const webhookData: TokenUseResponseData = JSON.parse(
     webhook.data as unknown as string,
   );
