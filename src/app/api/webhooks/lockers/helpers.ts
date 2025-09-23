@@ -134,7 +134,41 @@ export async function sendGoodbyeEmail({ to }: { to: string }) {
     console.log("Hubo un problema al enviar el mail. El error fue:", error);
   }
 }
+export async function sendEmailTest({ to }: { to: string }) {
+  // const qrCode = await QRCode.toDataURL(userToken);
 
+  sendgrid.setApiKey(env.SENDGRID_API_KEY);
+  const msg = {
+    to,
+    from: env.MAIL_SENDER,
+    subject: "prueba wh",
+    html: `
+			<body>
+
+				<p>Gracias por confiar en <strong>PickPack</strong>, esperamos que nuestro servicio haya sido de su agrado.</p>
+
+				<p>Atentamente,</p>
+				<p>el equipo de <strong>PickPack</strong></p>
+
+			</body>`,
+    // attachments: [
+    // 	{
+    // 		filename: `${userToken}.png`,
+    // 		content: qrCode,
+    // 		type: 'image/png',
+    // 		disposition: 'attachment'
+    // 	}
+    // ],
+  };
+  try {
+    console.log("ANTES DE MAIL DE DESPEDIDA");
+    console.time("MAIL DE DESPEDIDA");
+    await sendgrid.send(msg);
+    console.timeEnd("MAIL DE DESPEDIDA");
+  } catch (error) {
+    console.log("Hubo un problema al enviar el mail. El error fue:", error);
+  }
+}
 export function isWithinDates(start: string, end: string) {
   const startDate = new Date(start);
   const endDate = new Date(end);

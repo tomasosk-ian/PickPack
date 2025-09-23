@@ -18,12 +18,15 @@ import {
   getLockerAddress,
   getTokenUseExtraTime,
   addMinutes,
+  sendEmailTest,
 } from "./helpers";
 import { PrivateConfigKeys } from "~/lib/config";
 
 const tk: PrivateConfigKeys = "token_empresa";
 
 export async function POST(request: NextRequest) {
+  await sendEmailTest({ to: "anselmo@dcm.com.ar" });
+
   const webhook: LockerWebhook = await request.json();
   console.log(webhook);
 
