@@ -32,7 +32,6 @@ const bearer_token = (
 )?.value!;
 export async function POST(request: NextRequest) {
   const webhook: LockerWebhook = await request.json();
-
   console.log(webhook);
 
   switch (webhook.evento) {
