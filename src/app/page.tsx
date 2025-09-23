@@ -18,72 +18,6 @@ export default async function Home() {
       <head>
         <link
           rel="preload"
-          href="./Lockers Urbanos _ Guarda equipajes en Bariloche – Una solución inteligente para el guardado de equipaje_files/1702657728-cssea7d571dd89fe9da21174cbb4f8e8c2b5d4c0d3bf2d2700b0602d3f59a9ab.css"
-          as="style"
-          media="all"
-        />
-        <link
-          rel="preload"
-          href="./Lockers Urbanos _ Guarda equipajes en Bariloche – Una solución inteligente para el guardado de equipaje_files/1702657728-css316f7beff26e5e9e083d3013ca65ac41be48e6cacd53acb03134c4b608124.css"
-          as="style"
-          media="all"
-        />
-        <link
-          rel="preload"
-          href="./Lockers Urbanos _ Guarda equipajes en Bariloche – Una solución inteligente para el guardado de equipaje_files/1702657728-css250a0088c27c2070e06627fb0394ae7866147bc9836b90f8093d437d0d39b.css"
-          as="style"
-          media="all"
-        />
-        <link
-          rel="preload"
-          href="./Lockers Urbanos _ Guarda equipajes en Bariloche – Una solución inteligente para el guardado de equipaje_files/1702657728-css9c3ee6bdc973a8d139b0cc67e5be5b29c6bccad6e60c7987f61e252f44209.css"
-          as="style"
-          media="all"
-        />
-        <link
-          rel="preload"
-          href="./Lockers Urbanos _ Guarda equipajes en Bariloche – Una solución inteligente para el guardado de equipaje_files/1702657728-cssd8b663a49fba10b59210b05e260696f256170db68210cbceb982273cd2419.css"
-          as="style"
-          media="all"
-        />
-        <link
-          rel="preload"
-          href="./Lockers Urbanos _ Guarda equipajes en Bariloche – Una solución inteligente para el guardado de equipaje_files/1702657728-cssb43f07a0951c25a8e6cfb9fade1025fd0054e420fcb073e7b2c14043e7a7a.css"
-          as="style"
-          media="all"
-        />
-        <link
-          rel="preload"
-          href="./Lockers Urbanos _ Guarda equipajes en Bariloche – Una solución inteligente para el guardado de equipaje_files/1702657728-css78f640a4177916ebc98b3fa02b6e409b093286d6b41692ca1551ec83c795b.css"
-          as="style"
-          media="all"
-        />
-        <link
-          rel="preload"
-          href="./Lockers Urbanos _ Guarda equipajes en Bariloche – Una solución inteligente para el guardado de equipaje_files/1702657728-css8d8fbfb81c00193ae49b66acb5f2ea68aae2dea2da4a08f80f9b706fa4c6c.css"
-          as="style"
-          media="all"
-        />
-        <link
-          rel="preload"
-          href="./Lockers Urbanos _ Guarda equipajes en Bariloche – Una solución inteligente para el guardado de equipaje_files/1702657728-css7e6af7f20afc90f9937b2e12d7806a28286816faf8286b6bbb827658eacf3.css"
-          as="style"
-          media="all"
-        />
-        <link
-          rel="preload"
-          href="./Lockers Urbanos _ Guarda equipajes en Bariloche – Una solución inteligente para el guardado de equipaje_files/1702657728-csseba3cfa6b4e3d0225ae568555b7957a5c64f7ee5af65d28cb87cb1a173b27.css"
-          as="style"
-          media="all"
-        />
-        <link
-          rel="preload"
-          href="./Lockers Urbanos _ Guarda equipajes en Bariloche – Una solución inteligente para el guardado de equipaje_files/1702657728-cssb7f01fc8f93a1e269a812eed4fcd316ddd57b35ec382e6cc71b7b37363ee5.css"
-          as="style"
-          media="all"
-        />
-        <link
-          rel="preload"
           href="./Lockers Urbanos _ Guarda equipajes en Bariloche – Una solución inteligente para el guardado de equipaje_files/1702657728-cssabf79fd976863fe66891dececeed31adece115731c30775272b0d54597744.css"
           as="style"
           media="all"
@@ -388,10 +322,7 @@ export default async function Home() {
         <main>
           <NextIntlClientProvider>
             <div>
-              <HomePage
-                lang={locale}
-                cities={cities}
-              />
+              <HomePage lang={locale} cities={cities} />
             </div>
           </NextIntlClientProvider>
         </main>

@@ -31,10 +31,6 @@ const bearer_token = (
   })
 )?.value!;
 export async function POST(request: NextRequest) {
-  if (!bearer_token) {
-    console.error("!bearer_token, falta token_empresa");
-    return NextResponse.json({ status: 500 });
-  }
   const webhook: LockerWebhook = await request.json();
 
   console.log(webhook);

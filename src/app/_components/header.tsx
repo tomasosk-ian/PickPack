@@ -25,27 +25,27 @@ export default function Home({ lang }: { lang?: string }) {
         <header className="header-bar">
           <div className="branding">
             <div id="site-title" className="assistive-text">
-              Pick Pack
+              PickPack
             </div>
             <div id="site-description" className="assistive-text">
-              Recibe tus paquetes donde quieras
+              Una solución inteligente para el guardado de equipaje
             </div>
             <a className="" href="/">
               <img
                 className="preload-me"
                 src="./Pick-Pack.png"
-                width="207"
-                height="74"
-                sizes="207px"
-                alt="Pick Pack"
+                width="60"
+                height="60"
+                sizes="100px"
+                alt="PickPack"
               />
               <img
                 className="mobile-logo preload-me"
                 src="./Pick-Pack.png"
-                width="183"
-                height="64"
-                sizes="183px"
-                alt="Pick Pack"
+                width="60"
+                height="60"
+                sizes="100px"
+                alt="PickPack"
               />
             </a>
           </div>
@@ -72,15 +72,30 @@ export default function Home({ lang }: { lang?: string }) {
         <div className="mobile-header-bar">
           <div className="mobile-navigation"></div>
           <div className="mobile-mini-widgets"></div>
-          <div className="mobile-branding">
-            <a className="" href="https://pickpack.com.ar/">
+          <div className="h-20 py-2">
+            <Select
+              defaultValue={lang}
+              onValueChange={(v) =>
+                setLang(v as Languages).catch(console.error)
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={t("language")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="es">Español</SelectItem>
+                <SelectItem value="en">English</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <a className="" href="/">
               <img
                 className="preload-me"
                 src="./Pick-Pack.png"
-                width="207"
-                height="74"
-                sizes="207px"
-                alt="Pick Pack"
+                width="100"
+                height="100"
+                sizes="100px"
+                alt="PickPack"
               />
             </a>
           </div>
