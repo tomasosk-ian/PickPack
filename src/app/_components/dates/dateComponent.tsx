@@ -27,7 +27,7 @@ export default function DateComponent({
 }) {
   const { data: plazoReserva } = api.config.getKey.useQuery({
     key: "reserve_from_now",
-    entityId: props.store.entidadId ?? ""
+    entityId: props.store.entidadId ?? "",
   });
   const [range, setRange] = useState<DateRange | undefined>();
 
@@ -63,6 +63,7 @@ export default function DateComponent({
 
   function handleClick() {
     const today = Date.now();
+    const fmt = "yyyy-MM-dd'T'HH:mm:ss";
     let start, end;
 
     if (plazoReserva?.value.trim().toLowerCase() === "true") {
@@ -72,7 +73,7 @@ export default function DateComponent({
         "yyyy-MM-dd'T'HH:mm:ss",
       );
     } else {
-      start = format(today, "yyyy-MM-dd'T'00:00:00");
+      start = format(today, fmt);
       end = format(range!.to!, "yyyy-MM-dd'T'23:59:59");
     }
 
@@ -84,13 +85,14 @@ export default function DateComponent({
 
   function onlyToday() {
     const today = Date.now();
+    const fmt = "yyyy-MM-dd'T'HH:mm:ss";
     let start, end;
 
     if (plazoReserva?.value.trim().toLowerCase() === "true") {
       start = format(today, "yyyy-MM-dd'T'HH:mm:ss");
       end = format(today + 1000 * 60 * 60 * 24 - 1000, "yyyy-MM-dd'T'HH:mm:ss");
     } else {
-      start = format(today, "yyyy-MM-dd'T'00:00:00");
+      start = format(today, fmt);
       end = format(today, "yyyy-MM-dd'T'23:59:59");
     }
 
