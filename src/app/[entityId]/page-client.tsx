@@ -1,11 +1,10 @@
 "use client"
-import type { City } from "~/server/api/routers/city";
 import HomePage from "../_components/home_page";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "~/components/ui/input";
-import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import { toast } from "sonner";
+import ButtonCustomComponent from "~/components/buttonCustom";
 
 export function HomeEntityClient({
   entityId,
@@ -16,12 +15,19 @@ export function HomeEntityClient({
   lang?: string;
   needsKey: boolean;
 }) {
-  const [isShowingHome, setShowingHome] = useState(!needsKey);
+  const [isShowingHome, setShowingHome] = useState(false);
   const [claveInput, setClaveInput] = useState("");
   const [jwt, setJwt] = useState<string | undefined>();
 
   const { data: cities = [] } = api.city.listFromEntity.useQuery({ entityId, jwt });
   const { mutateAsync, isLoading } = api.config.signEntityKey.useMutation();
+
+  useEffect(() => {
+    if (!needsKey) {
+      setJwt("");
+      setShowingHome(true);
+    }
+  }, []);
 
   async function process() {
     try {
@@ -45,18 +51,20 @@ export function HomeEntityClient({
   return (
     isShowingHome
     ? <HomePage lang={lang} cities={cities} entityId={entityId} jwt={jwt} />
-    : <div className="w-full h-full flex self-centerx">
-        <p>Ingrese la clave</p>
-        <Input
-          value={claveInput}
-          onChange={(e) => setClaveInput(e.target.value)}
-          placeholder="Clave"
-          disabled={isLoading}
-        />
+    : <div className="w-full h-[100vh] flex items-center justify-center">
+        <div className="w-[200px] h-[30%] flex items-center justify-center flex-col">
+          <p className="text-2xl font-semibold mb-3">Ingrese la clave</p>
+          <div className="flex flex-row gap-4">
+            <Input
+              value={claveInput}
+              onChange={(e) => setClaveInput(e.target.value)}
+              placeholder="Clave"
+              disabled={isLoading}
+            />
 
-        <Button disabled={claveInput.length === 0 || isLoading} onClick={process}>
-          Continuar
-        </Button>
-    </div>
+            <ButtonCustomComponent disabled={claveInput.length === 0 || isLoading} onClick={process} text="Continuar" />
+          </div>
+        </div>  
+      </div>
   );
 }

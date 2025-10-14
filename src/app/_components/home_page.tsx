@@ -51,7 +51,7 @@ export default function HomePage(props: {
   const t = useTranslations('HomePage');
   const { data: loadedStores = [] } = props.entityId !== null
     ? api.store.listFromEntity.useQuery({ entityId: props.entityId, jwt: props.jwt })
-    : api.store.list.useQuery();
+    : api.store.listPublic.useQuery();
 
   const { mutateAsync: reservarBox } =
     api.lockerReserve.reserveBox.useMutation();
@@ -115,7 +115,7 @@ export default function HomePage(props: {
     dni: "",
   });
 
-  
+
 
   const handleSubmit = () => {
     const newErrors = {
@@ -266,6 +266,8 @@ export default function HomePage(props: {
                       city={city}
                       setCity={setCity}
                       setStores={setStores}
+                      jwt={props.jwt}
+                      entityId={props.entityId}
                       t={t}
                     />}
                   {(!store && (city !== null || props.cities.length === 0) && Array.isArray(storesFinal)) && (

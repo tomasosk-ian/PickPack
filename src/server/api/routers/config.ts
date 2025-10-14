@@ -16,14 +16,14 @@ export const configRouter = createTRPCRouter({
     }))
     .query(async ({ input, ctx }) => {
       const key: PrivateConfigKeys = "entidad_lockers_privados_key";
-      const res = (await ctx.db.query.publicConfig.findFirst({
+      const res = (await ctx.db.query.privateConfig.findFirst({
         where: and(
           eq(schema.publicConfig.key, key),
           eq(schema.publicConfig.entidadId, input.entityId),
         )
       })) ?? null;
 
-      return res !== null;
+      return res !== null && res.value !== "";
     }),
   signEntityKey: publicProcedure
     .input(z.object({
@@ -32,7 +32,7 @@ export const configRouter = createTRPCRouter({
     }))
     .mutation(async ({ input, ctx }) => {
       const key: PrivateConfigKeys = "entidad_lockers_privados_key";
-      const res = (await ctx.db.query.publicConfig.findFirst({
+      const res = (await ctx.db.query.privateConfig.findFirst({
         where: and(
           eq(schema.publicConfig.key, key),
           eq(schema.publicConfig.entidadId, input.entityId),

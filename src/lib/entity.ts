@@ -14,12 +14,16 @@ export function entityJwtSecret() {
 
 export async function trpcEntityJwtValidate(entityId: string, jwtStr?: string) {
   const key: PrivateConfigKeys = "entidad_lockers_privados_key";
-  const res = (await db.query.publicConfig.findFirst({
+  let res = (await db.query.privateConfig.findFirst({
     where: and(
       eq(schema.publicConfig.key, key),
       eq(schema.publicConfig.entidadId, entityId),
     )
   })) ?? null;
+
+  if (res?.value === "") {
+    res = null;
+  }
 
   if (!jwtStr && !res) {
     return;
@@ -30,7 +34,7 @@ export async function trpcEntityJwtValidate(entityId: string, jwtStr?: string) {
   }
 
   if (jwtStr && !res) {
-    throw new TRPCError({ code: 'UNAUTHORIZED', message: "No se pedía clave en entidad sin clave" });
+    return;
   }
 
   try {

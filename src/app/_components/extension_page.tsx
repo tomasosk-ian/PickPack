@@ -62,7 +62,7 @@ export default function Extension({ t, ...props }: {
     dni: "",
   });
   const { data: coins } = api.coin.get.useQuery();
-  const { data: stores } = api.store.list.useQuery();
+  const { data: stores } = api.store.listPublic.useQuery();
   const [terms, setTerms] = useState<boolean>(false);
   const { mutateAsync: reserveToClient } =
     api.reserve.reservesToClients.useMutation();

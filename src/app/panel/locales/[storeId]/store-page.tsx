@@ -60,6 +60,7 @@ export default function StorePage(props: {
   const [name, setName] = useState(props.store.name);
   const [cityId, setCity] = useState(props.store.cityId);
   const [serieLockers, setSerieLockers] = useState(props.store.lockers.map(v => v.serieLocker));
+  const [serieLockersPrivados, setSerieLockersPrivados] = useState(props.store.lockers.filter(v => v.isPrivate).map(v => v.serieLocker));
   const [address, setAddress] = useState(props.store.address);
   const [description, setDescription] = useState(props.store.description ?? "");
   const [organizationName, setOrganizationName] = useState(
@@ -74,7 +75,9 @@ export default function StorePage(props: {
 
   useEffect(() => {
     const r = props.store.lockers.map(v => v.serieLocker);
+    const rPriv = props.store.lockers.filter(l => l.isPrivate).map(v => v.serieLocker);
     setSerieLockers(r);
+    setSerieLockersPrivados(rPriv);
   }, [props.store]);
 
   async function handleChange() {
@@ -88,6 +91,7 @@ export default function StorePage(props: {
         organizationName,
         description,
         serieLockers,
+        serieLockersPrivados,
         firstTokenUseTime
       });
       toast.success("Se ha modificado el local.");
@@ -264,7 +268,30 @@ export default function StorePage(props: {
             </AccordionContent>
           </AccordionItem>
 
-          <AccordionItem value="item-5" className="border-none">
+          <AccordionItem value="item-5">
+            <AccordionTrigger>
+              <h2 className="text-md">Selección de lockers privados</h2>
+            </AccordionTrigger>
+            <AccordionContent>
+              <Card className="p-5">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <MultiSelect
+                      onValueChange={setSerieLockersPrivados}
+                      value={serieLockersPrivados}
+                      defaultValue={props.store.lockers.filter(l => l.isPrivate).map(v => v.serieLocker)}
+                      options={serieLockers.map(v => ({ // las opciones son todos los lockers ya seleccionados
+                        label: v,
+                        value: v
+                      }))}
+                    />
+                  </div>
+                </div>
+              </Card>
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="item-6" className="border-none">
             <AccordionTrigger>
               <h2 className="text-md">Eliminar local</h2>
             </AccordionTrigger>

@@ -9,7 +9,7 @@ export default async function Reserve(props: { params: { nReserve: string } }) {
     nReserve: parseInt(props.params.nReserve),
   });
 
-  const stores = await api.store.list.query();
+  const stores = await api.store.listPublic.query();
   const store = stores.find((s) => s.lockers.some(l => l.serieLocker == reserve[0]!.NroSerie!))!
 
   const sizes = await api.size.getProt.query({

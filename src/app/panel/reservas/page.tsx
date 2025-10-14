@@ -13,7 +13,7 @@ export default async function Home() {
 
   const activesReserves = await api.reserve.getActive.query();
   const allReserves = await api.reserve.get.query();
-  const stores = (await api.store.list.query())
+  const stores = (await api.store.listPublic.query())
     .filter(v => v.entidadId === orgId);
 
   return <ReservesComponent

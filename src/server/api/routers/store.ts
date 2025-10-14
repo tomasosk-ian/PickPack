@@ -15,16 +15,16 @@ import { stores } from "~/server/db/schema";
 import { RouterOutputs } from "~/trpc/shared";
 
 export const storeRouter = createTRPCRouter({
-  list: publicProcedure
-    .query(({ ctx }) => {
-      const stores = ctx.db.query.stores.findMany({
+  listPublic: publicProcedure
+    .query(async () => {
+      const stores = await db.query.stores.findMany({
         with: {
           city: true,
           lockers: true,
         },
       });
 
-      return stores;
+      return filterPublicStores(stores);
     }),
 
   listFromEntity: publicProcedure
@@ -39,7 +39,7 @@ export const storeRouter = createTRPCRouter({
         where: eq(schema.stores.entidadId, input.entityId),
         with: {
           city: true,
-          lockers: true,
+          lockers: true
         },
       });
 
@@ -77,7 +77,7 @@ export const storeRouter = createTRPCRouter({
       return store;
     }),
 
-  getByCity: publicProcedure
+  getByCityPublic: publicProcedure
     .input(
       z.object({
         cityId: z.string(),
@@ -86,6 +86,31 @@ export const storeRouter = createTRPCRouter({
     .query(async ({ input }) => {
       const store = await db.query.stores.findMany({
         where: eq(schema.stores.cityId, input.cityId),
+        with: {
+          city: true,
+          lockers: true,
+        },
+      });
+
+      return filterPublicStores(store);
+    }),
+
+  getByCityFromEntity: publicProcedure
+    .input(
+      z.object({
+        cityId: z.string(),
+        entityId: z.string(),
+        jwt: z.string().optional(),
+      }),
+    )
+    .query(async ({ input }) => {
+      await trpcEntityJwtValidate(input.entityId, input.jwt);
+
+      const store = await db.query.stores.findMany({
+        where: and(
+          eq(schema.stores.cityId, input.cityId),
+          eq(schema.stores.entidadId, input.entityId),
+        ),
         with: {
           city: true,
           lockers: true,
@@ -147,6 +172,7 @@ export const storeRouter = createTRPCRouter({
         organizationName: z.string().min(0).max(1023),
         description: z.string().min(0).max(1023),
         serieLockers: z.array(z.string()).nullable(),
+        serieLockersPrivados: z.array(z.string()).nullable(),
         firstTokenUseTime: z.number()
       }),
     )
@@ -160,6 +186,7 @@ export const storeRouter = createTRPCRouter({
         throw new TRPCError({ code: 'NOT_FOUND' });
       }
 
+      const privados = input.serieLockersPrivados ?? [];
       return ctx.db.transaction(async (tx) => {
         await tx
           .update(stores)
@@ -185,6 +212,7 @@ export const storeRouter = createTRPCRouter({
               .values({
                 storeId: a.identifier,
                 serieLocker: l,
+                isPrivate: privados.some(p => l === p),
               });
           }
         }
@@ -207,4 +235,22 @@ export const storeRouter = createTRPCRouter({
     }),
 });
 
-export type Store = RouterOutputs["store"]["list"][number];
+export type Store = RouterOutputs["store"]["listPublic"][number];
+
+// Solo los stores no privados (los que solo tienen lockers privados),
+// y de aquellos solo los lockers públicos
+function filterPublicStores(stores: { identifier: string; name: string; description: string | null; image: string | null; entidadId: string | null; cityId: string; address: string | null; organizationName: string | null; firstTokenUseTime: number | null; city: { identifier: string; name: string; description: string; image: string | null; }; lockers: { storeId: string; serieLocker: string; isPrivate: boolean | null; }[]; }[]) {
+  let storesRes = [];
+  for (const store of stores) {
+    const privates = store.lockers.filter(l => l.isPrivate);
+    const onlyHasPrivates = privates.length === store.lockers.length && privates.length > 0;
+    if (!onlyHasPrivates) {
+      storesRes.push({
+        ...store,
+        lockers: store.lockers.filter(l => !l.isPrivate),
+      });
+    }
+  }
+  return storesRes;
+}
+

@@ -53,7 +53,7 @@ export default async function Home() {
 async function fetchData() {
   const [lockers, stores, reservas, sizes] = await Promise.all([
     api.locker.get.query(),
-    api.store.list.query(),
+    api.store.listPublic.query(),
     api.reserve.getLastReserveByBox.query(),
     api.size.getProt.query({ store: null }),
   ]);

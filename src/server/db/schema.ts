@@ -95,6 +95,7 @@ export const storesLockers = sqliteTable(
   {
     storeId: text("storeId", { length: 255 }).notNull(),
     serieLocker: text("serieLocker", { length: 255 }).notNull(),
+    isPrivate: integer({ mode: "boolean" }).default(false),
   },
   (t) => ({
     key: primaryKey(t.storeId, t.serieLocker),
