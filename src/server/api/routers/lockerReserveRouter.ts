@@ -70,7 +70,7 @@ export const lockerReserveRouter = createTRPCRouter({
       } else {
       }
 
-      const reservedBoxData = await reservationResponse.json();
+      const reservedBoxTransactionId = await reservationResponse.json();
 
       const client = await getClientByEmail(input.client!, ent.id);
       const identifier = createId();
@@ -87,12 +87,12 @@ export const lockerReserveRouter = createTRPCRouter({
         Confirmado: input.Confirmado,
         Modo: input.Modo,
         Cantidad: input.Cantidad,
-        IdTransaction: reservedBoxData,
+        IdTransaction: reservedBoxTransactionId,
         client: client?.email,
         nReserve: input.nReserve,
         entidadId: ent.id,
       });
-      return reservedBoxData;
+      return reservedBoxTransactionId;
     }),
 
   confirmBox: publicProcedure

@@ -226,41 +226,7 @@ export const sizeRouter = createTRPCRouter({
         throw 'NOT_FOUND';
       }
 
-      const sizesLockersMap: Record<number, {
-        lockers: {
-          serie: string,
-          cantidad: number,
-          size: LockerSize,
-        }[],
-        size: LockerSize, // solo sirve para referenciar por id y nombre
-        cantidadSumada: number,
-      }> = {};
-
-      for (const locker of store.lockers) {
-        const disp = await disponibilidad(locker.serieLocker, input.inicio, input.fin);
-        for (const lockerSize of disp) {
-          if (sizesLockersMap[lockerSize.id]) {
-            sizesLockersMap[lockerSize.id]!.lockers.push({
-              serie: locker.serieLocker,
-              cantidad: lockerSize.cantidad ?? 0,
-              size: await sizeExpand(lockerSize, store.identifier),
-            });
-            sizesLockersMap[lockerSize.id]!.cantidadSumada += (lockerSize.cantidad ?? 0);
-          } else {
-            sizesLockersMap[lockerSize.id] = {
-              lockers: [{
-                serie: locker.serieLocker,
-                cantidad: lockerSize.cantidad ?? 0,
-                size: await sizeExpand(lockerSize, store.identifier),
-              }],
-              size: await sizeExpand(lockerSize, store.identifier),
-              cantidadSumada: lockerSize.cantidad ?? 0,
-            };
-          }
-        }
-      }
-
-      return Object.fromEntries(Object.entries(sizesLockersMap).filter(v => typeof v[1].size.tarifa === 'string'));
+      return await getAvailability(store, input);
     }),
 
   getById: protectedProcedure
@@ -339,3 +305,41 @@ const sizeValidator = z.object({
 export type Size = z.infer<typeof sizeValidator>;
 
 const responseValidator = z.array(sizeValidator);
+
+export async function getAvailability(store: { description: string | null; identifier: string; name: string; image: string | null; entidadId: string | null; cityId: string; address: string | null; organizationName: string | null; firstTokenUseTime: number | null; lockers: { storeId: string; serieLocker: string; }[]; }, input: { store: string; inicio: string | null; fin: string | null; }) {
+  const sizesLockersMap: Record<number, {
+    lockers: {
+      serie: string;
+      cantidad: number;
+      size: LockerSize;
+    }[];
+    size: LockerSize; // solo sirve para referenciar por id y nombre
+    cantidadSumada: number;
+  }> = {};
+
+  for (const locker of store.lockers) {
+    const disp = await disponibilidad(locker.serieLocker, input.inicio, input.fin);
+    for (const lockerSize of disp) {
+      if (sizesLockersMap[lockerSize.id]) {
+        sizesLockersMap[lockerSize.id]!.lockers.push({
+          serie: locker.serieLocker,
+          cantidad: lockerSize.cantidad ?? 0,
+          size: await sizeExpand(lockerSize, store.identifier),
+        });
+        sizesLockersMap[lockerSize.id]!.cantidadSumada += (lockerSize.cantidad ?? 0);
+      } else {
+        sizesLockersMap[lockerSize.id] = {
+          lockers: [{
+            serie: locker.serieLocker,
+            cantidad: lockerSize.cantidad ?? 0,
+            size: await sizeExpand(lockerSize, store.identifier),
+          }],
+          size: await sizeExpand(lockerSize, store.identifier),
+          cantidadSumada: lockerSize.cantidad ?? 0,
+        };
+      }
+    }
+  }
+
+  return Object.fromEntries(Object.entries(sizesLockersMap).filter(v => typeof v[1].size.tarifa === 'string'));
+}
