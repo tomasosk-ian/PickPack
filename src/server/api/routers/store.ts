@@ -14,7 +14,7 @@ import { stores } from "~/server/db/schema";
 import { RouterOutputs } from "~/trpc/shared";
 
 export const storeRouter = createTRPCRouter({
-  get: publicProcedure
+  list: publicProcedure
     .query(({ ctx }) => {
       const stores = ctx.db.query.stores.findMany({
         with: {
@@ -22,6 +22,23 @@ export const storeRouter = createTRPCRouter({
           lockers: true,
         },
       });
+
+      return stores;
+    }),
+
+  listFromEntity: publicProcedure
+    .input(z.object({
+      entityId: z.string()
+    }))
+    .query(({ ctx, input }) => {
+      const stores = ctx.db.query.stores.findMany({
+        where: eq(schema.stores.entidadId, input.entityId),
+        with: {
+          city: true,
+          lockers: true,
+        },
+      });
+
       return stores;
     }),
 
@@ -186,4 +203,4 @@ export const storeRouter = createTRPCRouter({
     }),
 });
 
-export type Store = RouterOutputs["store"]["get"][number];
+export type Store = RouterOutputs["store"]["list"][number];

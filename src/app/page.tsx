@@ -9,9 +9,11 @@ const inter = Inter({
   variable: "--font-sans",
 });
 
-export default async function Home() {
-  const cities = await api.city.get.query();
+export async function HomeWithEntity({ entityId }: { entityId: string | null }) {
   const locale = await getLocale();
+  const cities = entityId
+    ? (await api.city.listFromEntity.query({ entityId }))
+    : (await api.city.list.query());
 
   return (
     <html lang={locale}>
@@ -322,11 +324,15 @@ export default async function Home() {
         <main>
           <NextIntlClientProvider>
             <div>
-              <HomePage lang={locale} cities={cities} />
+              <HomePage lang={locale} cities={cities} entityId={entityId} />
             </div>
           </NextIntlClientProvider>
         </main>
       </body>
     </html>
   );
+}
+
+export default async function Home() {
+  return <HomeWithEntity entityId={null} />;
 }
