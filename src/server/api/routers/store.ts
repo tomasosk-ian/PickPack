@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
+import { trpcEntityJwtValidate } from "~/lib/entity";
 import { trpcTienePermisoCtx } from "~/lib/roles";
 import { createId } from "~/lib/utils";
 
@@ -28,10 +29,13 @@ export const storeRouter = createTRPCRouter({
 
   listFromEntity: publicProcedure
     .input(z.object({
-      entityId: z.string()
+      entityId: z.string(),
+      jwt: z.string().optional(),
     }))
-    .query(({ ctx, input }) => {
-      const stores = ctx.db.query.stores.findMany({
+    .query(async ({ ctx, input }) => {
+      await trpcEntityJwtValidate(input.entityId, input.jwt);
+
+      const stores = await ctx.db.query.stores.findMany({
         where: eq(schema.stores.entidadId, input.entityId),
         with: {
           city: true,

@@ -12,6 +12,7 @@ import { RouterOutputs } from "~/trpc/shared";
 import { db, schema } from "~/server/db";
 import { trpcTienePermisoCtx } from "~/lib/roles";
 import { PERMISO_ADMIN } from "~/lib/permisos";
+import { trpcEntityJwtValidate } from "~/lib/entity";
 
 export const cityRouter = createTRPCRouter({
   list: publicProcedure.query(({ ctx }) => {
@@ -24,10 +25,13 @@ export const cityRouter = createTRPCRouter({
 
   listFromEntity: publicProcedure
     .input(z.object({
-      entityId: z.string()
+      entityId: z.string(),
+      jwt: z.string().optional(),
     }))
-    .query(({ ctx, input }) => {
-      const result = ctx.db.query.cities.findMany({
+    .query(async ({ input }) => {
+      await trpcEntityJwtValidate(input.entityId, input.jwt);
+
+      const result = await db.query.cities.findMany({
         where: (table, { exists }) => exists(
           db.select()
             .from(schema.stores)

@@ -46,10 +46,11 @@ export default function HomePage(props: {
   cities: City[];
   entityId: string | null;
   lang?: string;
+  jwt?: string;
 }) {
   const t = useTranslations('HomePage');
   const { data: loadedStores = [] } = props.entityId !== null
-    ? api.store.listFromEntity.useQuery({ entityId: props.entityId })
+    ? api.store.listFromEntity.useQuery({ entityId: props.entityId, jwt: props.jwt })
     : api.store.list.useQuery();
 
   const { mutateAsync: reservarBox } =

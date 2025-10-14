@@ -3,18 +3,14 @@ import HomePage from "./_components/home_page";
 import { Inter } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
+import React from "react";
 
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
 });
 
-export async function HomeWithEntity({ entityId }: { entityId: string | null }) {
-  const locale = await getLocale();
-  const cities = entityId
-    ? (await api.city.listFromEntity.query({ entityId }))
-    : (await api.city.list.query());
-
+export async function HomeHeader({ children, locale }: { children: React.ReactNode, locale: string }) {
   return (
     <html lang={locale}>
       <head>
@@ -324,7 +320,7 @@ export async function HomeWithEntity({ entityId }: { entityId: string | null }) 
         <main>
           <NextIntlClientProvider>
             <div>
-              <HomePage lang={locale} cities={cities} entityId={entityId} />
+              {children}
             </div>
           </NextIntlClientProvider>
         </main>
@@ -334,5 +330,10 @@ export async function HomeWithEntity({ entityId }: { entityId: string | null }) 
 }
 
 export default async function Home() {
-  return <HomeWithEntity entityId={null} />;
+  const locale = await getLocale();
+  const cities = await api.city.list.query();
+
+  return <HomeHeader locale={locale}>
+    <HomePage lang={locale} cities={cities} entityId={null} />
+  </HomeHeader>
 }

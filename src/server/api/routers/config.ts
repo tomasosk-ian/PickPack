@@ -5,8 +5,60 @@ import { and, eq } from "drizzle-orm";
 import { PrivateConfigKeys, type PublicConfigKeys } from "~/lib/config";
 import { TRPCError } from "@trpc/server";
 import { trpcTienePermisoCtx } from "~/lib/roles";
+import jwt from "jsonwebtoken";
+import { timingSafeEqual } from "crypto";
+import { entityJwtSecret } from "~/lib/entity";
 
 export const configRouter = createTRPCRouter({
+  needsEntityKey: publicProcedure
+    .input(z.object({
+      entityId: z.string(),
+    }))
+    .query(async ({ input, ctx }) => {
+      const key: PrivateConfigKeys = "entidad_lockers_privados_key";
+      const res = (await ctx.db.query.publicConfig.findFirst({
+        where: and(
+          eq(schema.publicConfig.key, key),
+          eq(schema.publicConfig.entidadId, input.entityId),
+        )
+      })) ?? null;
+
+      return res !== null;
+    }),
+  signEntityKey: publicProcedure
+    .input(z.object({
+      entityId: z.string(),
+      key: z.string(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const key: PrivateConfigKeys = "entidad_lockers_privados_key";
+      const res = (await ctx.db.query.publicConfig.findFirst({
+        where: and(
+          eq(schema.publicConfig.key, key),
+          eq(schema.publicConfig.entidadId, input.entityId),
+        )
+      })) ?? null;
+
+      if (!res) {
+        return null;
+      }
+
+      const inputKeyBuf = Buffer.from(input.key, 'utf8');
+      const storedKeyBuf = Buffer.from(res.value, 'utf8');
+
+      if (inputKeyBuf.length !== storedKeyBuf.length) {
+        return null;
+      }
+
+      if (!timingSafeEqual(inputKeyBuf, storedKeyBuf)) {
+        return null;
+      }
+
+      return jwt.sign({
+        exp: Math.floor(Date.now() / 1000) + (60 * 60), // 1 hora
+        data: 'entity_key'
+      }, entityJwtSecret());
+    }),
   getKey: publicProcedure
     .input(z.object({
       key: z.custom<PublicConfigKeys>(),
