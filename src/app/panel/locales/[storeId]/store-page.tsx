@@ -30,7 +30,7 @@ import { useRouter } from "next/navigation";
 import type { City } from "~/server/api/routers/city";
 import { toast } from "sonner";
 import { UploadButton } from "~/utils/uploadthing";
-import type { Store } from "~/server/api/routers/store";
+import type { StorePrivate } from "~/server/api/routers/store";
 import {
   Select,
   SelectContent,
@@ -50,7 +50,7 @@ import { List, ListTile } from "~/components/list";
 import type { Fee } from "~/server/api/routers/fee";
 
 export default function StorePage(props: {
-  store: Store;
+  store: StorePrivate;
   cities: City[];
   lockers: Locker[];
   coins: Coin[];
@@ -65,6 +65,9 @@ export default function StorePage(props: {
   const [description, setDescription] = useState(props.store.description ?? "");
   const [organizationName, setOrganizationName] = useState(
     props.store.organizationName!,
+  );
+  const [backofficeEmail, setBackofficeEmail] = useState(
+    props.store.backofficeEmail!,
   );
   const [firstTokenUseTime, setFirstTokenUseTime] = useState(props.store.firstTokenUseTime!);
   const [loading, setLoading] = useState(false);
@@ -92,7 +95,8 @@ export default function StorePage(props: {
         description,
         serieLockers,
         serieLockersPrivados,
-        firstTokenUseTime
+        firstTokenUseTime,
+        backofficeEmail,
       });
       toast.success("Se ha modificado el local.");
       router.refresh();
@@ -181,6 +185,14 @@ export default function StorePage(props: {
                       id="orgname"
                       value={organizationName}
                       onChange={(e) => setOrganizationName(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="email">Email backoffice</Label>
+                    <Input
+                      id="email"
+                      value={backofficeEmail}
+                      onChange={(e) => setBackofficeEmail(e.target.value)}
                     />
                   </div>
                   <div className="col-span-2">

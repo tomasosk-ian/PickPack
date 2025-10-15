@@ -170,8 +170,8 @@ async function sendBackofficeEmail({
       })
     );
 
-    if (!backofficeEmail) {
-      console.error(`[${entityId}] stic ord-confirm sin backoffice email para store`, storeName);
+    if (!backofficeEmail || !backofficeEmail.includes("@")) {
+      console.error(`[${entityId}] stic ord-confirm sin backoffice email para store`, storeName, backofficeEmail);
       return;
     }
 

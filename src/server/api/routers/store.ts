@@ -105,17 +105,6 @@ export const storeRouter = createTRPCRouter({
           city: true,
           lockers: true,
         },
-        columns: {
-          address: true,
-          cityId: true,
-          description: true,
-          entidadId: true,
-          identifier: true,
-          image: true,
-          name: true,
-          organizationName: true,
-          firstTokenUseTime: true,
-        },
       });
 
       return store;
@@ -196,6 +185,7 @@ export const storeRouter = createTRPCRouter({
         organizationName: z.string().min(0).max(1023),
         description: z.string().min(0).max(1023),
         serieLocker: z.string().nullable(),
+        backofficeEmail: z.string().max(255),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -214,7 +204,8 @@ export const storeRouter = createTRPCRouter({
         address: input.address,
         organizationName: input.organizationName,
         description: input.description,
-        entidadId: ctx.orgId
+        entidadId: ctx.orgId,
+        backofficeEmail: input.backofficeEmail,
       });
 
       if (input.serieLocker !== null) {
@@ -239,24 +230,14 @@ export const storeRouter = createTRPCRouter({
         description: z.string().min(0).max(1023),
         serieLockers: z.array(z.string()).nullable(),
         serieLockersPrivados: z.array(z.string()).nullable(),
-        firstTokenUseTime: z.number()
+        firstTokenUseTime: z.number(),
+        backofficeEmail: z.string().nullable(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       await trpcTienePermisoCtx(ctx, "panel:locales");
       const a = await ctx.db.query.stores.findFirst({
         where: eq(schema.stores.identifier, input.identifier),
-        columns: {
-          address: true,
-          cityId: true,
-          description: true,
-          entidadId: true,
-          identifier: true,
-          image: true,
-          name: true,
-          organizationName: true,
-          firstTokenUseTime: true,
-        },
       });
 
       if (!a) {
@@ -274,7 +255,8 @@ export const storeRouter = createTRPCRouter({
             address: input.address,
             description: input.description,
             organizationName: input.organizationName,
-            firstTokenUseTime: input.firstTokenUseTime
+            firstTokenUseTime: input.firstTokenUseTime,
+            backofficeEmail: input.backofficeEmail,
           })
           .where(and(
             eq(stores.identifier, input.identifier),
@@ -313,6 +295,7 @@ export const storeRouter = createTRPCRouter({
 });
 
 export type Store = RouterOutputs["store"]["listPublic"][number];
+export type StorePrivate = NonNullable<RouterOutputs["store"]["getById"]>;
 
 // Solo los stores no privados (los que solo tienen lockers privados),
 // y de aquellos solo los lockers públicos
