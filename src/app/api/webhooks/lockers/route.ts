@@ -46,9 +46,22 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
     console.log("error, nro de serie no asignado a ningún local");
     return;
   }
+
   const store = await db.query.stores.findFirst({
     where: eq(schema.stores.identifier, storeRelation.storeId),
+    columns: {
+      address: true,
+      cityId: true,
+      description: true,
+      entidadId: true,
+      identifier: true,
+      image: true,
+      name: true,
+      organizationName: true,
+      firstTokenUseTime: true,
+    }
   });
+
   if (!store || !store.entidadId) {
     console.log("error, entidad no encontrada");
     return;

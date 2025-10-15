@@ -24,7 +24,18 @@ export async function sizesList(localId: string | null, entityId: string | null)
 
   const reservedBoxData = await sizeResponse.json();
   const allLocales = await db.query.stores.findMany({
-    where: eq(schema.stores.entidadId, entityId ?? "")
+    where: eq(schema.stores.entidadId, entityId ?? ""),
+    columns: {
+      address: true,
+      cityId: true,
+      description: true,
+      entidadId: true,
+      identifier: true,
+      image: true,
+      name: true,
+      organizationName: true,
+      firstTokenUseTime: true,
+    }
   });
 
   const validatedData = responseValidator.parse(reservedBoxData);
@@ -41,7 +52,18 @@ export async function sizesList(localId: string | null, entityId: string | null)
 
         if (!entityId) {
           const store = await db.query.stores.findFirst({
-            where: eq(schema.stores.identifier, localId)
+            where: eq(schema.stores.identifier, localId),
+            columns: {
+              address: true,
+              cityId: true,
+              description: true,
+              entidadId: true,
+              identifier: true,
+              image: true,
+              name: true,
+              organizationName: true,
+              firstTokenUseTime: true,
+            },
           });
 
           if (store) {
@@ -130,7 +152,18 @@ const feeDataPreparedSE = db.query.feeData.findFirst({
 }).prepare();
 
 const storesPreparedSE = db.query.stores.findFirst({
-  where: eq(schema.stores.identifier, sql.placeholder("localId"))
+  where: eq(schema.stores.identifier, sql.placeholder("localId")),
+  columns: {
+    address: true,
+    cityId: true,
+    description: true,
+    entidadId: true,
+    identifier: true,
+    image: true,
+    name: true,
+    organizationName: true,
+    firstTokenUseTime: true,
+  },
 }).prepare();
 
 const sizePreparedSE = db.query.sizes.findFirst({
@@ -219,7 +252,18 @@ export const sizeRouter = createTRPCRouter({
         where: eq(schema.stores.identifier, input.store),
         with: {
           lockers: true
-        }
+        },
+        columns: {
+          address: true,
+          cityId: true,
+          description: true,
+          entidadId: true,
+          identifier: true,
+          image: true,
+          name: true,
+          organizationName: true,
+          firstTokenUseTime: true,
+        },
       });
 
       if (!store) {
@@ -256,13 +300,6 @@ export const sizeRouter = createTRPCRouter({
       const validatedData = responseValidator.parse(reservedBoxData);
 
       const size = validatedData.find((item) => item.id === input.sizeId);
-      // const store = await db.query.stores.findFirst({
-      //   where: eq(schema.stores.identifier, input.storeId),
-      //   with: {
-      //     city: true,
-      //   },
-      // });
-
       return size;
     }),
 
@@ -306,7 +343,7 @@ export type Size = z.infer<typeof sizeValidator>;
 
 const responseValidator = z.array(sizeValidator);
 
-export async function getAvailability(store: { description: string | null; identifier: string; name: string; image: string | null; entidadId: string | null; cityId: string; address: string | null; organizationName: string | null; firstTokenUseTime: number | null; lockers: { storeId: string; serieLocker: string; }[]; }, input: { store: string; inicio: string | null; fin: string | null; }) {
+export async function getAvailability(store: { identifier: string; lockers: { storeId: string; serieLocker: string; }[]; }, input: { store: string; inicio: string | null; fin: string | null; }) {
   const sizesLockersMap: Record<number, {
     lockers: {
       serie: string;

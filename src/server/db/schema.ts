@@ -71,6 +71,7 @@ export const stores = sqliteTable(
     firstTokenUseTime: integer("first_token_use_time").default(15),
     entidadId: text("entidadId")
       .references(() => companies.id, { onDelete: "cascade" }),
+    backofficeEmail: text("backofficeEmail"),
   },
   (vt) => ({
     compoundKey: primaryKey(vt.identifier),
@@ -165,6 +166,7 @@ export const sizesRelations = relations(sizes, ({ one }) => ({
   }),
 }));
 
+// de acá sale el bendito nReserve
 export const reservasToClients = sqliteTable(
   "reservasToClients",
   {
@@ -185,6 +187,7 @@ export const reservasToClientsRelations = relations(
     }),
   }),
 );
+
 export const reservas = sqliteTable(
   "reservas",
   {
@@ -209,6 +212,13 @@ export const reservas = sqliteTable(
     mpPagadoOk: integer("mpPagadoOk", { mode: "boolean" }).default(false),
     entidadId: text("entidadId")
       .references(() => companies.id, { onDelete: "cascade" }),
+    status: text("status", { enum: [
+      "pendiente_ubic",
+      "ubicada",
+      "disponible_retiro",
+      "cancelada",
+      "expirada",
+    ] }), // a priori para la integración con tiendastic
   },
   (vt) => ({
     compoundKey: primaryKey(vt.identifier),

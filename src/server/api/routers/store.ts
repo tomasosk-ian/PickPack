@@ -22,6 +22,17 @@ export const storeRouter = createTRPCRouter({
           city: true,
           lockers: true,
         },
+        columns: {
+          address: true,
+          cityId: true,
+          description: true,
+          entidadId: true,
+          identifier: true,
+          image: true,
+          name: true,
+          organizationName: true,
+          firstTokenUseTime: true,
+        },
       });
 
       return filterPublicStores(stores);
@@ -41,6 +52,17 @@ export const storeRouter = createTRPCRouter({
           city: true,
           lockers: true
         },
+        columns: {
+          address: true,
+          cityId: true,
+          description: true,
+          entidadId: true,
+          identifier: true,
+          image: true,
+          name: true,
+          organizationName: true,
+          firstTokenUseTime: true,
+        },
       });
 
       return stores;
@@ -53,6 +75,17 @@ export const storeRouter = createTRPCRouter({
         with: {
           city: true,
           lockers: true,
+        },
+        columns: {
+          address: true,
+          cityId: true,
+          description: true,
+          entidadId: true,
+          identifier: true,
+          image: true,
+          name: true,
+          organizationName: true,
+          firstTokenUseTime: true,
         },
       });
       return stores;
@@ -72,6 +105,17 @@ export const storeRouter = createTRPCRouter({
           city: true,
           lockers: true,
         },
+        columns: {
+          address: true,
+          cityId: true,
+          description: true,
+          entidadId: true,
+          identifier: true,
+          image: true,
+          name: true,
+          organizationName: true,
+          firstTokenUseTime: true,
+        },
       });
 
       return store;
@@ -89,6 +133,17 @@ export const storeRouter = createTRPCRouter({
         with: {
           city: true,
           lockers: true,
+        },
+        columns: {
+          address: true,
+          cityId: true,
+          description: true,
+          entidadId: true,
+          identifier: true,
+          image: true,
+          name: true,
+          organizationName: true,
+          firstTokenUseTime: true,
         },
       });
 
@@ -114,6 +169,17 @@ export const storeRouter = createTRPCRouter({
         with: {
           city: true,
           lockers: true,
+        },
+        columns: {
+          address: true,
+          cityId: true,
+          description: true,
+          entidadId: true,
+          identifier: true,
+          image: true,
+          name: true,
+          organizationName: true,
+          firstTokenUseTime: true,
         },
       });
 
@@ -179,7 +245,18 @@ export const storeRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       await trpcTienePermisoCtx(ctx, "panel:locales");
       const a = await ctx.db.query.stores.findFirst({
-        where: eq(schema.stores.identifier, input.identifier)
+        where: eq(schema.stores.identifier, input.identifier),
+        columns: {
+          address: true,
+          cityId: true,
+          description: true,
+          entidadId: true,
+          identifier: true,
+          image: true,
+          name: true,
+          organizationName: true,
+          firstTokenUseTime: true,
+        },
       });
 
       if (!a) {

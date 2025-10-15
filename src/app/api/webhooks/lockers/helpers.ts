@@ -42,6 +42,7 @@ export async function editTokenToServer(
     },
     body: JSON.stringify(token),
   });
+
   return response;
 }
 
