@@ -1,19 +1,20 @@
-import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import { db, schema } from "~/server/db";
 import { sticEvtWebhookConfirmedOrderSchema } from "~/lib/stic/models";
-import { sticProcessOrder } from "./lib";
+import { sticProcessOrder } from "../[entityId]/ord-confirm/lib";
+import { eq } from "drizzle-orm";
 
 export async function POST(
   request: NextRequest,
-  { params: { entityId } }: { params: { entityId: string } },
 ) {
+  // TODO: levantar una entidad equis
   const entidad = await db.query.companies.findFirst({
-    where: eq(schema.companies.id, entityId)
+    where: eq(schema.companies.id, "default")
   });
 
-  if (!entidad) {
-    console.error(`[${entityId}] stic ord-confirm entity not found`);
+  const entityId = entidad?.id;
+  if (!entidad || !entityId) {
+    console.error(`[${entityId}] stic ord-confirm-global no entity`);
     return NextResponse.json(null, { status: 404 });
   }
 
