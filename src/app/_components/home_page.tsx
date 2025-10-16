@@ -35,6 +35,7 @@ import ButtonIconCustomComponent from "~/components/button-icon-custom";
 import { useTranslations } from "next-intl";
 import { SidebarProvider } from "~/components/ui/sidebar";
 import { AppSidebar } from "~/components/app-sidebar";
+import { isValidEmail } from "~/lib/utils";
 
 export const Icons = {
   spinner: Loader2,
@@ -43,10 +44,19 @@ export const Icons = {
 let paymentDisabledRef = false;
 export default function HomePage(props: {
   cities: City[];
+  entityId: string | null;
   lang?: string;
+  jwt?: string;
 }) {
   const t = useTranslations('HomePage');
-  const { data: loadedStores = [] } = api.store.get.useQuery();
+  const { data: loadedStores = [] } = props.entityId !== null
+    ? api.store.listFromEntity.useQuery({ entityId: props.entityId, jwt: props.jwt })
+    : api.store.listPublic.useQuery();
+
+  const { mutateAsync: reservarBox } =
+    api.lockerReserve.reserveBox.useMutation();
+  const { mutateAsync: reserveToClient } =
+    api.reserve.reservesToClients.useMutation();
 
   const [paymentDisabled, setPaymentDisabled] = useState(false);
   const [city, setCity] = useState<City | null>(null);
@@ -61,10 +71,6 @@ export default function HomePage(props: {
   const [pagoOk, setPagoOk] = useState<boolean>(false);
   const [days, setDays] = useState<number>(0);
   const [cupon, setCupon] = useState<Cupon>();
-  const { mutateAsync: reservarBox } =
-    api.lockerReserve.reserveBox.useMutation();
-  const { mutateAsync: reserveToClient } =
-    api.reserve.reservesToClients.useMutation();
   const [reserves, setReserves] = useState<Reserve[]>([]);
   const [loadingPay, setLoadingPay] = useState<boolean>(false);
   const [failedResponse, setFailedResponse] = useState<boolean>(false);
@@ -108,10 +114,9 @@ export default function HomePage(props: {
     terms: "",
     dni: "",
   });
-  const isValidEmail = (email: string) => {
-    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return regex.test(email);
-  };
+
+
+
   const handleSubmit = () => {
     const newErrors = {
       name: client.name ? "" : t("mandatoryName"),
@@ -125,9 +130,9 @@ export default function HomePage(props: {
 
     if (Object.values(newErrors).some((error) => error)) {
       setErrors(newErrors);
-
       return false;
     }
+
     return true;
   };
 
@@ -255,12 +260,14 @@ export default function HomePage(props: {
               <div className="container absolute">
                 {failedResponse && <AlertFailedResponse />}
                 <div className="flex flex-col items-center justify-center ">
-                  {((!city && props.cities.length > 0) || !Array.isArray(storesFinal)) && 
+                  {((!city && props.cities.length > 0) || !Array.isArray(storesFinal)) &&
                     <CitySelector
                       cities={props.cities}
                       city={city}
                       setCity={setCity}
                       setStores={setStores}
+                      jwt={props.jwt}
+                      entityId={props.entityId}
                       t={t}
                     />}
                   {(!store && (city !== null || props.cities.length === 0) && Array.isArray(storesFinal)) && (

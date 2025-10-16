@@ -16,6 +16,7 @@ const preparedCompanyById = db.query.companies
   .prepare();
 
 export const companiesRouter = createTRPCRouter({
+  current: protectedProcedure.query(({ ctx }) => ctx.orgId),
   list: protectedProcedure.query(async ({ ctx }) => {
     const { perms, roles } = await serverUserPerms(
       ctx.session.user.id,

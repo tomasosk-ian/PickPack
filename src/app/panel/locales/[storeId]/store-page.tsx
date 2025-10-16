@@ -30,7 +30,7 @@ import { useRouter } from "next/navigation";
 import type { City } from "~/server/api/routers/city";
 import { toast } from "sonner";
 import { UploadButton } from "~/utils/uploadthing";
-import type { Store } from "~/server/api/routers/store";
+import type { StorePrivate } from "~/server/api/routers/store";
 import {
   Select,
   SelectContent,
@@ -50,7 +50,7 @@ import { List, ListTile } from "~/components/list";
 import type { Fee } from "~/server/api/routers/fee";
 
 export default function StorePage(props: {
-  store: Store;
+  store: StorePrivate;
   cities: City[];
   lockers: Locker[];
   coins: Coin[];
@@ -60,10 +60,14 @@ export default function StorePage(props: {
   const [name, setName] = useState(props.store.name);
   const [cityId, setCity] = useState(props.store.cityId);
   const [serieLockers, setSerieLockers] = useState(props.store.lockers.map(v => v.serieLocker));
+  const [serieLockersPrivados, setSerieLockersPrivados] = useState(props.store.lockers.filter(v => v.isPrivate).map(v => v.serieLocker));
   const [address, setAddress] = useState(props.store.address);
   const [description, setDescription] = useState(props.store.description ?? "");
   const [organizationName, setOrganizationName] = useState(
     props.store.organizationName!,
+  );
+  const [backofficeEmail, setBackofficeEmail] = useState(
+    props.store.backofficeEmail!,
   );
   const [firstTokenUseTime, setFirstTokenUseTime] = useState(props.store.firstTokenUseTime!);
   const [loading, setLoading] = useState(false);
@@ -74,7 +78,9 @@ export default function StorePage(props: {
 
   useEffect(() => {
     const r = props.store.lockers.map(v => v.serieLocker);
+    const rPriv = props.store.lockers.filter(l => l.isPrivate).map(v => v.serieLocker);
     setSerieLockers(r);
+    setSerieLockersPrivados(rPriv);
   }, [props.store]);
 
   async function handleChange() {
@@ -88,7 +94,9 @@ export default function StorePage(props: {
         organizationName,
         description,
         serieLockers,
-        firstTokenUseTime
+        serieLockersPrivados,
+        firstTokenUseTime,
+        backofficeEmail,
       });
       toast.success("Se ha modificado el local.");
       router.refresh();
@@ -179,6 +187,14 @@ export default function StorePage(props: {
                       onChange={(e) => setOrganizationName(e.target.value)}
                     />
                   </div>
+                  <div>
+                    <Label htmlFor="email">Email backoffice</Label>
+                    <Input
+                      id="email"
+                      value={backofficeEmail}
+                      onChange={(e) => setBackofficeEmail(e.target.value)}
+                    />
+                  </div>
                   <div className="col-span-2">
                     <Label htmlFor="description">Imagen</Label>
                     <UploadButton
@@ -264,7 +280,30 @@ export default function StorePage(props: {
             </AccordionContent>
           </AccordionItem>
 
-          <AccordionItem value="item-5" className="border-none">
+          <AccordionItem value="item-5">
+            <AccordionTrigger>
+              <h2 className="text-md">Selección de lockers privados</h2>
+            </AccordionTrigger>
+            <AccordionContent>
+              <Card className="p-5">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <MultiSelect
+                      onValueChange={setSerieLockersPrivados}
+                      value={serieLockersPrivados}
+                      defaultValue={props.store.lockers.filter(l => l.isPrivate).map(v => v.serieLocker)}
+                      options={serieLockers.map(v => ({ // las opciones son todos los lockers ya seleccionados
+                        label: v,
+                        value: v
+                      }))}
+                    />
+                  </div>
+                </div>
+              </Card>
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="item-6" className="border-none">
             <AccordionTrigger>
               <h2 className="text-md">Eliminar local</h2>
             </AccordionTrigger>
