@@ -268,8 +268,7 @@ export default function LockerOcupationPage() {
   const { data: timeOut } = api.params.getTimeOut.useQuery();
   const { data: privateConfigs, refetch: refetchPrivate } = api.config.listPrivateAdmin.useQuery();
   const { data: publicConfigs, refetch: refetchPublic } = api.config.listPublicAdmin.useQuery();
-  // const { mutateAsync: deletePrivateKey } = api.config.deletePrivateKeyAdmin.useMutation();
-  // const { mutateAsync: deletePublicKey } = api.config.deletePublicKeyAdmin.useMutation();
+  const { data: currentEntityId } = api.companies.current.useQuery();
 
   async function invalidate() {
     await refetchPrivate();
@@ -293,6 +292,7 @@ export default function LockerOcupationPage() {
       </div>
       <section className="space-y-2">
         <div>(Servidor) TimeOut Mobbex: {timeOut}</div>
+        <div>ID de entidad: {currentEntityId}</div>
       </section>
     </LayoutContainer>
   );
