@@ -28,7 +28,19 @@ async function getFeesByStore(id: string, entityId: string) {
       eq(schema.feeData.entidadId, ent.id),
     ),
     with: {
-      store: true,
+      store: {
+        columns: {
+          address: true,
+          cityId: true,
+          description: true,
+          entidadId: true,
+          identifier: true,
+          image: true,
+          name: true,
+          organizationName: true,
+          firstTokenUseTime: true,
+        },
+      }
     },
     orderBy: (feeData, { desc }) => [desc(feeData.identifier)],
   });
@@ -51,7 +63,19 @@ async function getFeeById(id: string, entityId: string) {
       eq(schema.feeData.entidadId, ent.id),
     ),
     with: {
-      store: true,
+      store: {
+        columns: {
+          address: true,
+          cityId: true,
+          description: true,
+          entidadId: true,
+          identifier: true,
+          image: true,
+          name: true,
+          organizationName: true,
+          firstTokenUseTime: true,
+        },
+      }
     },
   });
 

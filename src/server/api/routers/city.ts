@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { createId } from "~/lib/utils";
 
@@ -12,21 +12,46 @@ import { RouterOutputs } from "~/trpc/shared";
 import { db, schema } from "~/server/db";
 import { trpcTienePermisoCtx } from "~/lib/roles";
 import { PERMISO_ADMIN } from "~/lib/permisos";
+import { trpcEntityJwtValidate } from "~/lib/entity";
 
 export const cityRouter = createTRPCRouter({
-  get: publicProcedure.query(({ ctx }) => {
-    ctx.db.select().from(cities);
+  list: publicProcedure.query(({ ctx }) => {
     const result = ctx.db.query.cities.findMany({
       orderBy: (cities, { desc }) => [desc(cities.identifier)],
     });
+
     return result;
   }),
+
+  listFromEntity: publicProcedure
+    .input(z.object({
+      entityId: z.string(),
+      jwt: z.string().optional(),
+    }))
+    .query(async ({ input }) => {
+      await trpcEntityJwtValidate(input.entityId, input.jwt);
+
+      const result = await db.query.cities.findMany({
+        where: (table, { exists }) => exists(
+          db.select()
+            .from(schema.stores)
+            .where(and(
+              eq(schema.stores.cityId, table.identifier),
+              eq(schema.stores.entidadId, input.entityId),
+            ))
+        ),
+        orderBy: (cities, { desc }) => [desc(cities.identifier)],
+      });
+
+      return result;
+    }),
 
   getCity: publicProcedure.input(z.string()).query(({ ctx, input }) => {
     return ctx.db.query.cities.findFirst({
       where: eq(cities.identifier, input),
     });
   }),
+
   create: protectedProcedure
     .input(
       z.object({
@@ -93,4 +118,4 @@ export const cityRouter = createTRPCRouter({
     }),
 });
 
-export type City = RouterOutputs["city"]["get"][number];
+export type City = RouterOutputs["city"]["list"][number];

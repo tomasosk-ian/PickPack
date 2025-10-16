@@ -62,7 +62,7 @@ export default function Extension({ t, ...props }: {
     dni: "",
   });
   const { data: coins } = api.coin.get.useQuery();
-  const { data: stores } = api.store.get.useQuery();
+  const { data: stores } = api.store.listPublic.useQuery();
   const [terms, setTerms] = useState<boolean>(false);
   const { mutateAsync: reserveToClient } =
     api.reserve.reservesToClients.useMutation();
@@ -80,7 +80,7 @@ export default function Extension({ t, ...props }: {
     dni: "0",
     entidadId: "",
   });
-  
+
   const isValidEmail = (email: string) => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return regex.test(email);
@@ -232,7 +232,7 @@ export default function Extension({ t, ...props }: {
               setFailed={setFailed}
             />
           </div>
-          </>}{" "}
+        </>}{" "}
         {loadingPay && <Icons.spinner className="h-4 w-4 animate-spin" />}
         {stores && reserve && !loadingPay && !pagoOk && (
           <div>
