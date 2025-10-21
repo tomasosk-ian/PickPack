@@ -6,7 +6,7 @@ import { PrivateConfigKeys } from "~/lib/config";
 import { dcmCreateToken1, dcmGetToken, DCMv2TokenCreate } from "~/lib/dcm";
 import { sticEvtWebhookConfirmedOrderSchema } from "~/lib/stic/models";
 import { createId } from "~/lib/utils";
-import { getAvailability } from "~/server/api/routers/sizes";
+import { sizesList } from "~/server/api/routers/sizes";
 import { db, schema } from "~/server/db";
 import utc from "dayjs/plugin/utc";
 
@@ -35,15 +35,15 @@ export async function sticProcessOrder({
 
   // TODO: CAMBIAR
   // Agarra cualquier store, cualquier locker.
-  const { store, locker, lockerSizeId } = await findAnyStoreAndLocker(entityId);
+  const { store, locker, size } = await findAnyStoreAndLocker(entityId);
 
-  if (!store || !locker || !lockerSizeId) {
+  if (!store || !locker || !size) {
     console.error(`[${entityId}] stic ord-confirm no store or locker available`, store, locker);
     return NextResponse.json(null, { status: 500 });
   }
 
   const reserveData: DCMv2TokenCreate = {
-    idSize: Number(lockerSizeId),
+    idSize: size.id,
     fechaInicio: new Date().toISOString(),
     confirmado: true,
     cantidad: 1,
@@ -55,15 +55,15 @@ export async function sticProcessOrder({
     return NextResponse.json(null, { status: 500 });
   }
 
-  const token1 = await dcmCreateToken1(locker.serie, reserveData, tokenEmpresa);
-  const tokenData = await dcmGetToken(locker.serie, token1, tokenEmpresa);
+  const token1 = await dcmCreateToken1(locker.serieLocker, reserveData, tokenEmpresa);
+  const tokenData = await dcmGetToken(locker.serieLocker, token1, tokenEmpresa);
 
   const newReserveId = createId();
   const [reserve] = await db.insert(schema.reservas)
     .values({
       identifier: newReserveId,
-      NroSerie: locker.serie,
-      IdSize: locker.size.id,
+      NroSerie: locker.serieLocker,
+      IdSize: size.id,
       IdBox: tokenData?.idBox,
       IdFisico: tokenData?.idBox,
       Token1: Number(token1), // ASUMO token numérico!!
@@ -94,7 +94,7 @@ export async function sticProcessOrder({
 
   const transaction = tx!;
   const tokensYTamaños: [string, string][] = [
-    [token1, locker.size.nombre ?? ""]
+    [token1, size.nombre ?? ""]
   ];
 
   const storeName = store.name;
@@ -253,6 +253,11 @@ async function getHookClientByEmail(name: string, email: string, entityId: strin
   return client;
 }
 
+// TODO: CAMBIAR ASIGNACION
+// TODO: CAMBIAR ASIGNACION
+// TODO: CAMBIAR ASIGNACION
+// TODO: CAMBIAR ASIGNACION
+// TODO: CAMBIAR ASIGNACION
 async function findAnyStoreAndLocker(entityId: string) {
   const allPossibleStores = await db.query.stores.findMany({
     where: eq(schema.stores.entidadId, entityId),
@@ -270,28 +275,26 @@ async function findAnyStoreAndLocker(entityId: string) {
     }
   });
 
-  let store = null, locker = null, lockerSizeId = null;
+  let store = null, locker = null, size = null;
   for (const possibleStore of allPossibleStores) {
-    const availability = await getAvailability(possibleStore, {
-      inicio: dayjs.utc().startOf("day").toISOString(),
-      fin: dayjs.utc().endOf("day").toISOString(),
-      store: possibleStore.identifier
+    const allPossibleSizes = await sizesList(possibleStore.identifier, entityId);
+    if (allPossibleSizes.length === 0) {
+      continue;
+    }
+    
+    const anyLocker = await db.query.storesLockers.findFirst({
+      where: eq(schema.storesLockers.storeId, possibleStore.identifier)
     });
 
-    const firstEntryWithAvailableCantidad = Object.entries(availability).find(
-      ([lockerSizeId, locker]) => locker.cantidadSumada > 0
-    );
-
-    if (!firstEntryWithAvailableCantidad) {
+    if (!anyLocker) {
       continue;
     }
 
-    lockerSizeId = firstEntryWithAvailableCantidad[0]!;
-    const lockerData = firstEntryWithAvailableCantidad[1]!;
-    const firstAvailableLockerData = lockerData.lockers.find(l => l.cantidad >= 1);
-    locker = firstAvailableLockerData!;
+    size = allPossibleSizes.at(0)!;
     store = possibleStore;
+    locker = anyLocker;
+    break;
   }
 
-  return { store, locker, lockerSizeId };
+  return { store, locker, lockerSerial: locker?.serieLocker ?? null, size };
 }
