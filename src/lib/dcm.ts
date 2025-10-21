@@ -3,25 +3,25 @@ import { env } from "~/env";
 
 // los nullish los puse a criterio para no poner precondiciones tan estrictas
 export const dcmV2TokenSchema = z.object({
-  Id: z.number(),
-  IdLocker: z.number().nullish(),
-  IdSize: z.number(),
-  IdBox: z.number().nullish(),
-  Token1: z.string(),
-  FechaCreacion: z.string(),
-  FechaInicio: z.string().nullish(),
-  FechaFin: z.string().nullish(),
-  Contador: z.number(),
-  Cantidad: z.number(),
-  Confirmado: z.boolean(),
-  Modo: z.string().nullish(),
+  id: z.number().nullish(),
+  idLocker: z.number().nullish(),
+  idSize: z.number(),
+  idBox: z.number().nullish(),
+  token1: z.string(),
+  fechaCreacion: z.string(),
+  fechaInicio: z.string().nullish(),
+  fechaFin: z.string().nullish(),
+  contador: z.number(),
+  cantidad: z.number(),
+  confirmado: z.boolean(),
+  modo: z.string().nullish(),
 });
 
 export type DCMv2Token = typeof dcmV2TokenSchema._output;
 
 export const dcmV2TokenCreateSchema = dcmV2TokenSchema
   .partial()
-  .required({ IdSize: true });
+  .required({ idSize: true });
 
 export type DCMv2TokenCreate = typeof dcmV2TokenCreateSchema._output;
 
@@ -61,7 +61,7 @@ export async function dcmGetToken(lockerSerie: string, token1: string, bearerTok
     const errorResponse = await reservationResponse.text();
     throw new Error("Error DCM dcmGetToken: " + errorResponse);
   } else {
-    const output = await reservationResponse.json();
+    const output: unknown = await reservationResponse.json();
     const outputParsed = await dcmV2TokenSchema.safeParseAsync(output);
     if (outputParsed.error) {
       console.error("dcmGetToken parse error:", outputParsed.error, output);

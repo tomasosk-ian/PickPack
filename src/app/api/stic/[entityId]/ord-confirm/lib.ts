@@ -21,7 +21,7 @@ export async function sticProcessOrder({
   entidad: typeof schema.companies.$inferSelect,
   body: typeof sticEvtWebhookConfirmedOrderSchema._output,
 }) {
-  let client = await getHookClientByEmail(body.CustomerName, body.CustomerEmail, entityId);
+  const client = await getHookClientByEmail(body.CustomerName, body.CustomerEmail, entityId);
 
   const [newReservaToClient] = await db
     .insert(schema.reservasToClients)
@@ -35,7 +35,7 @@ export async function sticProcessOrder({
 
   // TODO: CAMBIAR
   // Agarra cualquier store, cualquier locker.
-  let { store, locker, lockerSizeId } = await findAnyStoreAndLocker(entityId);
+  const { store, locker, lockerSizeId } = await findAnyStoreAndLocker(entityId);
 
   if (!store || !locker || !lockerSizeId) {
     console.error(`[${entityId}] stic ord-confirm no store or locker available`, store, locker);
@@ -43,10 +43,10 @@ export async function sticProcessOrder({
   }
 
   const reserveData: DCMv2TokenCreate = {
-    IdSize: Number(lockerSizeId),
-    FechaInicio: new Date().toISOString(),
-    Confirmado: true,
-    Cantidad: 1,
+    idSize: Number(lockerSizeId),
+    fechaInicio: new Date().toISOString(),
+    confirmado: true,
+    cantidad: 1,
   };
 
   const tokenEmpresa = await getTokenEmpresa(entityId);
@@ -59,21 +59,21 @@ export async function sticProcessOrder({
   const tokenData = await dcmGetToken(locker.serie, token1, tokenEmpresa);
 
   const newReserveId = createId();
-  let [reserve] = await db.insert(schema.reservas)
+  const [reserve] = await db.insert(schema.reservas)
     .values({
       identifier: newReserveId,
       NroSerie: locker.serie,
       IdSize: locker.size.id,
-      IdBox: tokenData?.IdBox,
-      IdFisico: tokenData?.IdBox,
+      IdBox: tokenData?.idBox,
+      IdFisico: tokenData?.idBox,
       Token1: Number(token1), // ASUMO token numérico!!
-      FechaCreacion: tokenData?.FechaCreacion ?? new Date().toISOString(),
-      FechaInicio: tokenData?.FechaInicio ?? reserveData.FechaInicio,
-      FechaFin: tokenData?.FechaFin ?? reserveData.FechaFin,
-      Contador: reserveData.Contador,
-      Confirmado: reserveData.Confirmado,
-      Modo: reserveData.Modo,
-      Cantidad: reserveData.Cantidad,
+      FechaCreacion: tokenData?.fechaCreacion ?? new Date().toISOString(),
+      FechaInicio: tokenData?.fechaInicio ?? reserveData.fechaInicio,
+      FechaFin: tokenData?.fechaFin ?? reserveData.fechaFin,
+      Contador: reserveData.contador,
+      Confirmado: reserveData.confirmado,
+      Modo: reserveData.modo,
+      Cantidad: reserveData.cantidad,
       IdTransaction: null, // sin API de reservas
       client: body.CustomerEmail,
       nReserve,
