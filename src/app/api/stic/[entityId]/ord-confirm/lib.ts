@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { and, eq, ilike } from "drizzle-orm";
+import { and, eq, like, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { env } from "~/env";
 import { PrivateConfigKeys } from "~/lib/config";
@@ -235,7 +235,7 @@ async function getTokenEmpresa(entityId: string) {
 async function getHookClientByEmail(name: string, email: string, entityId: string) {
   let client = await db.query.clients.findFirst({
     where: and(
-      ilike(schema.clients.email, email),
+      like(sql`UPPER(${schema.clients.email})`, email.toUpperCase()),
       eq(schema.clients.entidadId, entityId)
     )
   });
