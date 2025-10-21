@@ -40,6 +40,7 @@ export async function dcmCreateToken1(lockerSerie: string, reserve: DCMv2TokenCr
 
   if (!reservationResponse.ok) {
     const errorResponse = await reservationResponse.text();
+    console.error("Error request dcmGetToken:", errorResponse, "para los datos", lockerSerie, reserve);
     throw new Error("Error DCM dcmCreateToken: " + errorResponse);
   } else {
     return await reservationResponse.text();
@@ -57,17 +58,21 @@ export async function dcmGetToken(lockerSerie: string, token1: string, bearerTok
     }
   );
 
+  const response = await reservationResponse.text();
   if (!reservationResponse.ok) {
-    const errorResponse = await reservationResponse.text();
-    throw new Error("Error DCM dcmGetToken: " + errorResponse);
+    throw new Error("Error DCM dcmGetToken: " + response);
   } else {
-    const output: unknown = await reservationResponse.json();
-    const outputParsed = await dcmV2TokenSchema.safeParseAsync(output);
-    if (outputParsed.error) {
-      console.error("dcmGetToken parse error:", outputParsed.error, output);
-      throw new Error("Error DCM dcmGetToken parsing");
-    }
+    try {
+      const outputParsed = await dcmV2TokenSchema.safeParseAsync(JSON.parse(response));
+      if (outputParsed.error) {
+        console.error("dcmGetToken parse error:", outputParsed.error, response);
+        throw new Error("Error DCM dcmGetToken parsing");
+      }
 
-    return outputParsed.data;
+      return outputParsed.data;
+    } catch (e) {
+      console.error("Error request dcmGetToken:", e, response, "para los datos", lockerSerie, token1);
+      throw new Error("Error DCM dcmGetToken as json");
+    }
   }
 }
