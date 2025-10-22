@@ -46,6 +46,52 @@ export async function editTokenToServer(
   return response;
 }
 
+export async function sendPackageReadyEmail({
+  to,
+  lockerAddress,
+  userToken,
+}: {
+  to: string;
+  lockerAddress: string;
+  userToken: string;
+}) {
+  var QRCode = require("qrcode");
+  // Generar data URL del QR
+  const dataUrl: string = await QRCode.toDataURL(userToken, { type: "png" });
+  // Extraer solo el Base64 (sin el prefijo "data:image/png;base64,")
+  const base64 = dataUrl.split(";base64,").pop()!;
+  sendgrid.setApiKey(env.SENDGRID_API_KEY);
+  const msg = {
+    to,
+    from: env.MAIL_SENDER,
+    subject: "PICKPACK: Paquete listo para ser recogido",
+    html: `
+			<body>
+				<p>El paquete destinado a su locker reservado en ${lockerAddress} fue preparado.</p>
+				<p><strong>Su código de acceso (Token) para retirar su paquete es ${userToken}</strong></p>
+				<p>Atentamente,</p>
+				<p>el equipo de <strong>PickPack</strong></p>
+			</body>`,
+    attachments: [
+      {
+        filename: `QR_${userToken}.png`,
+        content: base64,
+        type: "image/png",
+        disposition: "attachment",
+        contentId: "qr_code_delivery",
+      },
+    ],
+  };
+  try {
+    console.log("ANTES DE MAIL DE PAQUETE LISTO");
+    console.time("MAIL DE AVISO DE PAQUETE LISTO");
+    await sendgrid.send(msg);
+    console.timeEnd("MAIL DE AVISO DE PAQUETE LISTO");
+  } catch (error) {
+    console.log("Hubo un problema al enviar el mail. El error fue:", error);
+  }
+}
+
 export async function sendPackageDeliveredEmail({
   to,
   lockerAddress,
@@ -177,10 +223,14 @@ export async function sendEmailTest(
     console.log("Hubo un problema al enviar el mail. El error fue:", error);
   }
 }
-export function isWithinDates(start: string, end: string) {
-  const startDate = new Date(start);
-  const endDate = new Date(end);
+export function isWithinDates(start: string, end?: string | null) {
   const now = new Date(Date.now());
+  const startDate = new Date(start);
+  if (!end) {
+    return startDate <= now;
+  }
+
+  const endDate = new Date(end);
   return startDate <= now && now <= endDate;
 }
 
