@@ -3,7 +3,7 @@ import { and, eq, like, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { env } from "~/env";
 import { PrivateConfigKeys } from "~/lib/config";
-import { dcmCreateToken1, dcmGetToken, DCMv2TokenCreate } from "~/lib/dcm";
+import { dcmCreateToken1, dcmGetLockerSizes, dcmGetToken, DCMv2TokenCreate } from "~/lib/dcm";
 import { sticEvtWebhookConfirmedOrderSchema } from "~/lib/stic/models";
 import { createId } from "~/lib/utils";
 import { sizesList } from "~/server/api/routers/sizes";
@@ -33,9 +33,15 @@ export async function sticProcessOrder({
   const reservaToClient = newReservaToClient!;
   const nReserve = reservaToClient.identifier;
 
+  const tokenEmpresa = await getTokenEmpresa(entityId);
+  if (!tokenEmpresa) {
+    console.error(`[${entityId}] stic ord-confirm no token empresa for dcm`);
+    return NextResponse.json(null, { status: 500 });
+  }
+
   // TODO: CAMBIAR
   // Agarra cualquier store, cualquier locker.
-  const { store, locker, size } = await findAnyStoreAndLocker(entityId);
+  const { store, locker, size } = await findAnyStoreAndLocker(entityId, tokenEmpresa);
 
   if (!store || !locker || !size) {
     console.error(`[${entityId}] stic ord-confirm no store or locker available`, store, locker);
@@ -48,12 +54,6 @@ export async function sticProcessOrder({
     confirmado: true,
     cantidad: 1,
   };
-
-  const tokenEmpresa = await getTokenEmpresa(entityId);
-  if (!tokenEmpresa) {
-    console.error(`[${entityId}] stic ord-confirm no token empresa for dcm`);
-    return NextResponse.json(null, { status: 500 });
-  }
 
   const token1 = await dcmCreateToken1(locker.serieLocker, reserveData, tokenEmpresa);
   const tokenData = await dcmGetToken(locker.serieLocker, token1, tokenEmpresa);
@@ -258,7 +258,7 @@ async function getHookClientByEmail(name: string, email: string, entityId: strin
 // TODO: CAMBIAR ASIGNACION
 // TODO: CAMBIAR ASIGNACION
 // TODO: CAMBIAR ASIGNACION
-async function findAnyStoreAndLocker(entityId: string) {
+async function findAnyStoreAndLocker(entityId: string, bearerToken: string) {
   const allPossibleStores = await db.query.stores.findMany({
     where: eq(schema.stores.entidadId, entityId),
     with: {
@@ -277,16 +277,16 @@ async function findAnyStoreAndLocker(entityId: string) {
 
   let store = null, locker = null, size = null;
   for (const possibleStore of allPossibleStores) {
-    const allPossibleSizes = await sizesList(possibleStore.identifier, entityId);
-    if (allPossibleSizes.length === 0) {
-      continue;
-    }
-    
     const anyLocker = await db.query.storesLockers.findFirst({
       where: eq(schema.storesLockers.storeId, possibleStore.identifier)
     });
 
     if (!anyLocker) {
+      continue;
+    }
+
+    const allPossibleSizes = await dcmGetLockerSizes(anyLocker.serieLocker, bearerToken);
+    if (allPossibleSizes.length === 0) {
       continue;
     }
 
