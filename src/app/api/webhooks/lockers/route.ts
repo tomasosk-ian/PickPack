@@ -19,6 +19,7 @@ import {
   getTokenUseExtraTime,
   addMinutes,
   sendEmailTest,
+  sendPackageReadyEmail,
 } from "./helpers";
 import { PrivateConfigKeys } from "~/lib/config";
 
@@ -90,7 +91,7 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
   const userTokenReservation = lockerReservations.find((reservation) => {
     return (
       reservation.Token2 === parseInt(webhookData.Token) &&
-      isWithinDates(reservation.FechaInicio!, reservation.FechaFin!)
+      isWithinDates(reservation.FechaInicio!, reservation.FechaFin)
     );
   });
 
@@ -110,6 +111,7 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
       webhook.fechaCreacion,
       tokenUseExtraTime!,
     );
+
     await db
       .update(reservas)
       .set({ Token2Used: true, FechaFin: reservationEndDate })
@@ -166,14 +168,16 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
     idSize: deliveryTokenReservation?.IdSize!,
     idBox: webhookData.Box!,
     fechaInicio: newTokenStartDate,
-    fechaFin: deliveryTokenReservation?.FechaFin!,
+    fechaFin: deliveryTokenReservation?.FechaFin ?? undefined,
     confirmado: true,
   };
+
   const userTokenCreationResponse = await addTokenToServer(
     newToken,
     webhook.nroSerieLocker,
     bearer_token,
   );
+
   if (!userTokenCreationResponse.ok) {
     const error = await userTokenCreationResponse.text();
     console.log(
@@ -183,6 +187,7 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
     console.log("Bearer token:", bearer_token);
     return;
   }
+
   const token2 = await userTokenCreationResponse.text();
   await db
     .update(reservas)
@@ -190,10 +195,18 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
     .where(eq(reservas.identifier, deliveryTokenReservation?.identifier!));
 
   const lockerAddress = await getLockerAddress(webhook.nroSerieLocker);
-  await sendPackageDeliveredEmail({
-    to: deliveryTokenReservation?.client!,
-    checkoutTime: deliveryTokenReservation?.FechaFin!,
-    userToken: token2,
-    lockerAddress: lockerAddress!,
-  });
+  if (deliveryTokenReservation?.FechaFin) {
+    await sendPackageDeliveredEmail({
+      to: deliveryTokenReservation.client!,
+      checkoutTime: deliveryTokenReservation.FechaFin,
+      userToken: token2,
+      lockerAddress: lockerAddress!,
+    });
+  } else {
+    await sendPackageReadyEmail({
+      to: deliveryTokenReservation?.client!,
+      userToken: token2,
+      lockerAddress: lockerAddress!,
+    });
+  }
 }
