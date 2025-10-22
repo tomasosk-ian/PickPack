@@ -19,6 +19,16 @@ export const dcmV2TokenSchema = z.object({
 
 export type DCMv2Token = typeof dcmV2TokenSchema._output;
 
+export const dcmV2SizeSchema = z.object({
+  id: z.number(),
+  nombre: z.string().nullish(),
+  ancho: z.number().nullish(),
+  alto: z.number().nullish(),
+  profundidad: z.number().nullish(),
+});
+
+export type DCMv2Size = typeof dcmV2SizeSchema._output;
+
 export const dcmV2TokenCreateSchema = dcmV2TokenSchema
   .partial()
   .required({ idSize: true });
@@ -73,6 +83,36 @@ export async function dcmGetToken(lockerSerie: string, token1: string, bearerTok
     } catch (e) {
       console.error("Error request dcmGetToken:", e, response, "para los datos", lockerSerie, token1);
       throw new Error("Error DCM dcmGetToken as json");
+    }
+  }
+}
+
+export async function dcmGetLockerSizes(lockerSerie: string, bearerToken: string): Promise<DCMv2Size[]> {
+  const reservationResponse = await fetch(
+    `${env.SERVER_URL}/api/v2/token/tamaños/${lockerSerie}`,
+    {
+      method: "GET",
+      headers: {
+        "Authorization": "Bearer " + bearerToken,
+      }
+    }
+  );
+
+  const response = await reservationResponse.text();
+  if (!reservationResponse.ok) {
+    throw new Error("Error DCM dcmGetLockerSizes: " + response);
+  } else {
+    try {
+      const outputParsed = await dcmV2SizeSchema.array().safeParseAsync(JSON.parse(response));
+      if (outputParsed.error) {
+        console.error("dcmGetLockerSizes parse error:", outputParsed.error, response);
+        throw new Error("Error DCM dcmGetLockerSizes parsing");
+      }
+
+      return outputParsed.data;
+    } catch (e) {
+      console.error("Error request dcmGetLockerSizes:", e, response, "para los datos", lockerSerie);
+      throw new Error("Error DCM dcmGetLockerSizes as json");
     }
   }
 }
