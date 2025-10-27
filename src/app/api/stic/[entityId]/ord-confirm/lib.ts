@@ -50,7 +50,7 @@ export async function sticProcessOrder({
 
   const reserveData: DCMv2TokenCreate = {
     idSize: size.id,
-    fechaInicio: new Date().toISOString(),
+    // fechaInicio: new Date().toISOString(),
     confirmado: true,
     cantidad: 1,
   };
