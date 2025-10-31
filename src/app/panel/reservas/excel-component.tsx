@@ -4,11 +4,15 @@ import { Button } from "~/components/ui/button";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import dayjs from "dayjs";
+import { ReservaStateTranslations } from "./columns";
+import { Reserve } from "~/server/api/routers/reserves";
 
 export function ReserveExcel({ allReservesData }: { allReservesData: {
   nReserve?: string | number | null,
   storeName?: string | null,
+  externalNReserve?: string | number | null,
   client?: string | null,
+  status: Reserve["status"],
   dataReserve?: {
     NroSerie?: string | null,
     FechaCreacion?: dayjs.ConfigType | null,
@@ -25,6 +29,8 @@ export function ReserveExcel({ allReservesData }: { allReservesData: {
       "Fecha Creacion",
       "Fecha Inicio",
       "Fecha Fin",
+      "N° Pedido",
+      "Estado"
     ]];
 
     for (const data of allReservesData) {
@@ -36,6 +42,8 @@ export function ReserveExcel({ allReservesData }: { allReservesData: {
         dayjs(data.dataReserve?.FechaCreacion).format("DD-MM-YYYY"),
         dayjs(data.dataReserve?.FechaInicio).format("DD-MM-YYYY HH:mm"),
         dayjs(data.dataReserve?.FechaFin).format("DD-MM-YYYY HH:mm"),
+        data.externalNReserve ?? "",
+        (data.status ? ReservaStateTranslations[data.status as keyof typeof ReservaStateTranslations] : null) || ""
       ]);
     }
 
