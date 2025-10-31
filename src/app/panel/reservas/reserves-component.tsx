@@ -39,6 +39,8 @@ export default async function ReservesComponent({ stores, ...props }: {
           stores?.find((x) => x.lockers.some(l => l.serieLocker === reserve.NroSerie))
             ?.name ?? "-",
         client: reserve.client ?? "-",
+        status: reserve.status,
+        externalNReserve: reserve.externalNReserve,
       }));
   };
 

@@ -20,21 +20,7 @@ import { trpcTienePermisoCtx } from "~/lib/roles";
 import { PrivateConfigKeys } from "~/lib/config";
 import { isWithinDates } from "~/app/api/webhooks/lockers/helpers";
 
-export type Reserve = {
-  identifier: string | null;
-  NroSerie: string | null;
-  IdSize: number | null;
-  IdBox: number | null;
-  IdFisico: number | null;
-  Token1: number | null;
-  Token2: number | null;
-  FechaCreacion: string | null;
-  FechaInicio: string | null;
-  FechaFin: string | null;
-  Token2Used: boolean;
-  Contador: number | null;
-  client: string | null;
-};
+export type Reserve = typeof schema.reservas.$inferSelect;
 
 // Definir el tipo del resultado agrupado
 export type GroupedReserves = {
@@ -175,7 +161,7 @@ export const reserveRouter = createTRPCRouter({
 
         with: { clients: true },
       });
-      return reserve as Reserve;
+      return reserve;
     }),
   getByClient: protectedProcedure
     .input(
@@ -243,23 +229,23 @@ export const reserveRouter = createTRPCRouter({
   create: publicProcedure
     .input(
       z.object({
-        IdLocker: z.number().nullable().optional(),
+        IdLocker: z.number().nullish(),
         NroSerie: z.string(),
-        IdSize: z.number().nullable(),
-        IdBox: z.number().nullable(),
-        IdFisico: z.number().nullable(),
-        Token1: z.number().nullable(),
-        FechaCreacion: z.string().nullable(),
-        FechaInicio: z.string().nullable(),
-        FechaFin: z.string().nullable(),
-        Contador: z.number().nullable(),
-        Confirmado: z.boolean().nullable().optional(),
-        Modo: z.string().nullable().optional(),
-        Cantidad: z.number().optional(),
-        IdTransaction: z.number().optional(),
-        client: z.string().nullable().optional(),
-        identifier: z.string().nullable().optional(),
-        nReserve: z.number().optional(),
+        IdSize: z.number().nullish(),
+        IdBox: z.number().nullish(),
+        IdFisico: z.number().nullish(),
+        Token1: z.number().nullish(),
+        FechaCreacion: z.string().nullish(),
+        FechaInicio: z.string().nullish(),
+        FechaFin: z.string().nullish(),
+        Contador: z.number().nullish(),
+        Confirmado: z.boolean().nullish(),
+        Modo: z.string().nullish(),
+        Cantidad: z.number().nullish(),
+        IdTransaction: z.number().nullish(),
+        client: z.string().nullish(),
+        identifier: z.string().nullish(),
+        nReserve: z.number().nullish(),
         entityId: z.string().min(1),
       }),
     )

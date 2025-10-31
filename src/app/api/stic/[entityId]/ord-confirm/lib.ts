@@ -79,6 +79,8 @@ export async function sticProcessOrder({
       nReserve,
       entidadId: entityId,
       status: "pendiente_ubic",
+      mode: "takeAway",
+      externalNReserve: String(body.OrderId),
     })
     .returning();
 

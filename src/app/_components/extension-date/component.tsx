@@ -4,10 +4,10 @@ import { DateRange } from "react-day-picker";
 import { useEffect, useState } from "react";
 import ButtonCustomComponent from "../../../components/buttonCustom";
 import { api } from "~/trpc/react";
-import { Reserve } from "~/server/api/routers/reserves";
 import { es } from "date-fns/locale";
 import { Translations } from "~/translations";
 import { Client } from "~/server/api/routers/clients";
+import { Reserve } from "~/server/api/routers/lockerReserveRouter";
 
 export default function DateComponent({ t, ...props }: {
   startDate: string | undefined;

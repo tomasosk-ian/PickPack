@@ -197,6 +197,7 @@ export default function HomePage(props: {
             const response = await reservarBox(
               {
                 ...reserve!,
+                
                 entityId: store?.entidadId ?? "",
               }
             );
