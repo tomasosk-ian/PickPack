@@ -114,7 +114,7 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
 
     await db
       .update(reservas)
-      .set({ Token2Used: true, FechaFin: reservationEndDate })
+      .set({ Token2Used: true, FechaFin: reservationEndDate, status: "retirada" })
       .where(eq(reservas.identifier, userTokenReservation.identifier!));
 
     const editUserTokenResponse = await editTokenToServerWithStoreExtraTime(
@@ -122,6 +122,7 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
       webhook,
       bearer_token,
     );
+
     if (!editUserTokenResponse.ok) {
       //TODO: Manejar el caso en el que falla el servidor, enviando un mail a algún administrador por ejemplo
       const error = await editUserTokenResponse.text();
@@ -153,8 +154,8 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
     webhook,
     bearer_token,
   );
-  console.log("Bearer token:", bearer_token);
 
+  console.log("Bearer token:", bearer_token);
   if (!editDeliveryTokenResponse.ok) {
     const error = await editDeliveryTokenResponse.text();
     console.log(
@@ -162,8 +163,8 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
     );
     return;
   }
-  const newTokenStartDate = webhook.fechaCreacion.split(".")[0];
 
+  const newTokenStartDate = webhook.fechaCreacion.split(".")[0];
   const newToken: TokenRequestCreationBody = {
     idSize: deliveryTokenReservation?.IdSize!,
     idBox: webhookData.Box!,
@@ -191,7 +192,7 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
   const token2 = await userTokenCreationResponse.text();
   await db
     .update(reservas)
-    .set({ Token2: parseInt(token2) })
+    .set({ Token2: parseInt(token2), status: "ubicada" })
     .where(eq(reservas.identifier, deliveryTokenReservation?.identifier!));
 
   const lockerAddress = await getLockerAddress(webhook.nroSerieLocker);

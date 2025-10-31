@@ -26,12 +26,9 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { asTRPCError } from "~/lib/errors";
-import { City } from "~/server/api/routers/city";
 import { Coin } from "~/server/api/routers/coin";
 import { Size } from "~/server/api/routers/sizes";
-import { Store } from "~/server/api/routers/store";
 import { api } from "~/trpc/react";
-import { UploadButton } from "~/utils/uploadthing";
 
 export function AddFeeDialog(props: { coins: Coin[]; sizes: Size[], localId?: string }) {
   const { mutateAsync: createFee, isLoading } = api.fee.create.useMutation();

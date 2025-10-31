@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import type { Translations } from "~/translations";
+
 export default function CitySelector({ t, ...props }: {
   cities: City[];
   city: City | null;

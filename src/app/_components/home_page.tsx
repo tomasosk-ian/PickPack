@@ -1,6 +1,5 @@
 "use client";
 import { City } from "~/server/api/routers/city";
-import { Button } from "~/components/ui/button";
 import StoreSelector from "./store/selector";
 import { Store } from "~/server/api/routers/store";
 import { Size } from "~/server/api/routers/sizes";
@@ -198,6 +197,7 @@ export default function HomePage(props: {
             const response = await reservarBox(
               {
                 ...reserve!,
+                
                 entityId: store?.entidadId ?? "",
               }
             );

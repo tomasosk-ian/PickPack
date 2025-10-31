@@ -28,7 +28,6 @@ import {
 import { asTRPCError } from "~/lib/errors";
 import { City } from "~/server/api/routers/city";
 import { Locker } from "~/server/api/routers/lockers";
-import { Store } from "~/server/api/routers/store";
 import { api } from "~/trpc/react";
 import { UploadButton } from "~/utils/uploadthing";
 

@@ -32,6 +32,10 @@ export const cities = sqliteTable(
   }),
 );
 
+export const citiesRelations = relations(cities, ({ many }) => ({
+  stores: many(stores)
+}));
+
 export const clients = sqliteTable(
   "clients",
   {
@@ -215,10 +219,10 @@ export const reservas = sqliteTable(
     status: text("status", { enum: [
       "pendiente_ubic",
       "ubicada",
-      "disponible_retiro",
-      "cancelada",
-      "expirada",
+      "retirada"
     ] }), // a priori para la integración con tiendastic
+    mode: text("mode", { enum: ["takeAway", "pickPack"] }).default("pickPack"),
+    externalNReserve: text("externalNReserve"),
   },
   (vt) => ({
     compoundKey: primaryKey(vt.identifier),
