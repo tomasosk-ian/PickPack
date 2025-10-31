@@ -36,6 +36,7 @@ import { DayPicker } from "react-day-picker";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { Store } from "~/server/api/routers/store";
+import { ReservaStateTranslations } from "../columns";
 
 export default function ReservePage(props: {
   reserve: Reserves[];
@@ -151,10 +152,15 @@ export default function ReservePage(props: {
               <p className=" mt-0 text-base font-bold text-orange-500">
                 {reserve[0]!.clients?.email}
               </p>
-              <p className=" mt-3   text-xxs">Telefono</p>
+              {" "}
+              <p className=" mb-0 mt-3 text-xxs">Estado </p>
               <p className=" mt-0 text-base font-bold text-orange-500">
-                {reserve[0]!.clients?.telefono}
-              </p>
+                {(reserve[0]!.status ? ReservaStateTranslations[reserve[0]!.status] : null) || "-"}
+              </p>{" "}
+              <p className=" mb-0 mt-3 text-xxs">N° Pedido </p>
+              <p className=" mt-0 text-base font-bold text-orange-500">
+                {reserve[0]!.externalNReserve || "-"}
+              </p>{" "}
             </div>
 
             <div className="">
@@ -167,6 +173,10 @@ export default function ReservePage(props: {
               <p className=" mt-0 text-base font-bold text-orange-500">
                 {store?.name}
               </p>{" "}
+              <p className=" mt-3   text-xxs">Telefono</p>
+              <p className=" mt-0 text-base font-bold text-orange-500">
+                {reserve[0]!.clients?.telefono}
+              </p>
             </div>
 
             <div className="  ">

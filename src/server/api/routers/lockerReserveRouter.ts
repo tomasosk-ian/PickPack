@@ -20,22 +20,22 @@ export const lockerReserveRouter = createTRPCRouter({
   reserveBox: publicProcedure
     .input(
       z.object({
-        IdLocker: z.number().nullable().optional(),
+        IdLocker: z.number().nullish(),
         NroSerie: z.string().nullable(),
         IdSize: z.number().nullable(),
         IdBox: z.number().nullable(),
-        Token1: z.number().nullable().optional(),
+        Token1: z.number().nullish(),
         FechaCreacion: z.string().nullable(),
         FechaInicio: z.string().nullable(),
         FechaFin: z.string().nullable(),
         Contador: z.number().nullable(),
-        Confirmado: z.boolean().nullable().optional(),
-        Modo: z.string().nullable().optional(),
-        Cantidad: z.number().optional(),
-        IdTransaction: z.number().optional(),
-        client: z.string().nullable().optional(),
-        identifier: z.string().nullable().optional(),
-        nReserve: z.number().optional(),
+        Confirmado: z.boolean().nullish(),
+        Modo: z.string().nullish(),
+        Cantidad: z.number().nullish(),
+        IdTransaction: z.number().nullish(),
+        client: z.string().nullish(),
+        identifier: z.string().nullish(),
+        nReserve: z.number().nullish(),
         entityId: z.string().min(1),
       }),
     )
@@ -237,7 +237,7 @@ export const lockerReserveRouter = createTRPCRouter({
 });
 
 const reserveValidator = z.object({
-  IdLocker: z.number().nullable().optional(),
+  IdLocker: z.number().nullish(),
   NroSerie: z.string().nullable(),
   IdSize: z.number().nullable(),
   IdBox: z.number().nullable(),
@@ -247,12 +247,12 @@ const reserveValidator = z.object({
   FechaInicio: z.string().nullable(),
   FechaFin: z.string().nullable(),
   Contador: z.number().nullable(),
-  Confirmado: z.boolean().nullable().optional(),
-  Modo: z.string().nullable().optional(),
-  Cantidad: z.number().optional(),
-  IdTransaction: z.number().optional(),
-  client: z.string().nullable().optional(),
-  identifier: z.string().nullable().optional(),
+  Confirmado: z.boolean().nullish(),
+  Modo: z.string().nullish(),
+  Cantidad: z.number().nullish(),
+  IdTransaction: z.number().nullish(),
+  client: z.string().nullish(),
+  identifier: z.string().nullish(),
 });
 export type Reserve = z.infer<typeof reserveValidator>;
 

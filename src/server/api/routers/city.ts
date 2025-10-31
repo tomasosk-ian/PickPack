@@ -15,7 +15,38 @@ import { PERMISO_ADMIN } from "~/lib/permisos";
 import { trpcEntityJwtValidate } from "~/lib/entity";
 
 export const cityRouter = createTRPCRouter({
-  list: publicProcedure.query(({ ctx }) => {
+  listNonEmpty: publicProcedure.query(({ ctx }) => {
+    const result = ctx.db.query.cities.findMany({
+      where: (table, { exists, and, or, isNull, eq }) => and(
+        exists(
+          db.select()
+            .from(schema.stores)
+            .where(
+              eq(schema.stores.cityId, table.identifier),
+            )
+        ),
+        exists(
+          db.select()
+            .from(schema.storesLockers)
+            .innerJoin(schema.stores, eq(schema.storesLockers.storeId, schema.stores.identifier))
+            .where(
+              and(
+                eq(schema.stores.cityId, table.identifier),
+                or(
+                  eq(schema.storesLockers.isPrivate, false),
+                  isNull(schema.storesLockers.isPrivate),
+                )
+              )
+            )
+        ),
+      ),
+      orderBy: (cities, { desc }) => [desc(cities.identifier)],
+    });
+
+    return result;
+  }),
+
+  listAll: protectedProcedure.query(({ ctx }) => {
     const result = ctx.db.query.cities.findMany({
       orderBy: (cities, { desc }) => [desc(cities.identifier)],
     });
@@ -118,4 +149,4 @@ export const cityRouter = createTRPCRouter({
     }),
 });
 
-export type City = RouterOutputs["city"]["list"][number];
+export type City = RouterOutputs["city"]["listNonEmpty"][number];
