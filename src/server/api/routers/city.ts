@@ -17,12 +17,28 @@ import { trpcEntityJwtValidate } from "~/lib/entity";
 export const cityRouter = createTRPCRouter({
   listNonEmpty: publicProcedure.query(({ ctx }) => {
     const result = ctx.db.query.cities.findMany({
-      where: (table, { exists }) => exists(
-        db.select()
-          .from(schema.stores)
-          .where(
-            eq(schema.stores.cityId, table.identifier),
-          )
+      where: (table, { exists, and, or, isNull, eq }) => and(
+        exists(
+          db.select()
+            .from(schema.stores)
+            .where(
+              eq(schema.stores.cityId, table.identifier),
+            )
+        ),
+        exists(
+          db.select()
+            .from(schema.storesLockers)
+            .innerJoin(schema.stores, eq(schema.storesLockers.storeId, schema.stores.identifier))
+            .where(
+              and(
+                eq(schema.stores.cityId, table.identifier),
+                or(
+                  eq(schema.storesLockers.isPrivate, false),
+                  isNull(schema.storesLockers.isPrivate),
+                )
+              )
+            )
+        ),
       ),
       orderBy: (cities, { desc }) => [desc(cities.identifier)],
     });
