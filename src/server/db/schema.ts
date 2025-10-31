@@ -32,6 +32,10 @@ export const cities = sqliteTable(
   }),
 );
 
+export const citiesRelations = relations(cities, ({ many }) => ({
+  stores: many(stores)
+}));
+
 export const clients = sqliteTable(
   "clients",
   {

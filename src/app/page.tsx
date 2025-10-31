@@ -331,7 +331,7 @@ export async function HomeHeader({ children, locale }: { children: React.ReactNo
 
 export default async function Home() {
   const locale = await getLocale();
-  const cities = await api.city.list.query();
+  const cities = await api.city.listNonEmpty.query();
 
   return <HomeHeader locale={locale}>
     <HomePage lang={locale} cities={cities} entityId={null} />

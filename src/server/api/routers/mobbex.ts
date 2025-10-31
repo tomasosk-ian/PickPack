@@ -134,5 +134,3 @@ export const mobbexRouter = createTRPCRouter({
       return checkoutNumber;
     }),
 });
-
-// export type City = RouterOutputs["city"]["get"][number];

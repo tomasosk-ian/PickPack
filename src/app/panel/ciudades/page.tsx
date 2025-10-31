@@ -12,7 +12,7 @@ export default async function Home() {
     return <></>;
   }
 
-  const cities = await api.city.list.query();
+  const cities = await api.city.listAll.query();
 
   return (
     <section className="space-y-2">
