@@ -19,6 +19,7 @@ import {
   getTokenUseExtraTime,
   addMinutes,
   sendEmailTest,
+  sendPackageReadyEmail,
 } from "./helpers";
 import { PrivateConfigKeys } from "~/lib/config";
 
@@ -46,9 +47,22 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
     console.log("error, nro de serie no asignado a ningún local");
     return;
   }
+
   const store = await db.query.stores.findFirst({
     where: eq(schema.stores.identifier, storeRelation.storeId),
+    columns: {
+      address: true,
+      cityId: true,
+      description: true,
+      entidadId: true,
+      identifier: true,
+      image: true,
+      name: true,
+      organizationName: true,
+      firstTokenUseTime: true,
+    }
   });
+
   if (!store || !store.entidadId) {
     console.log("error, entidad no encontrada");
     return;
@@ -77,7 +91,7 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
   const userTokenReservation = lockerReservations.find((reservation) => {
     return (
       reservation.Token2 === parseInt(webhookData.Token) &&
-      isWithinDates(reservation.FechaInicio!, reservation.FechaFin!)
+      isWithinDates(reservation.FechaInicio!, reservation.FechaFin)
     );
   });
 
@@ -97,9 +111,10 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
       webhook.fechaCreacion,
       tokenUseExtraTime!,
     );
+
     await db
       .update(reservas)
-      .set({ Token2Used: true, FechaFin: reservationEndDate })
+      .set({ Token2Used: true, FechaFin: reservationEndDate, status: "retirada" })
       .where(eq(reservas.identifier, userTokenReservation.identifier!));
 
     const editUserTokenResponse = await editTokenToServerWithStoreExtraTime(
@@ -107,6 +122,7 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
       webhook,
       bearer_token,
     );
+
     if (!editUserTokenResponse.ok) {
       //TODO: Manejar el caso en el que falla el servidor, enviando un mail a algún administrador por ejemplo
       const error = await editUserTokenResponse.text();
@@ -138,8 +154,8 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
     webhook,
     bearer_token,
   );
-  console.log("Bearer token:", bearer_token);
 
+  console.log("Bearer token:", bearer_token);
   if (!editDeliveryTokenResponse.ok) {
     const error = await editDeliveryTokenResponse.text();
     console.log(
@@ -147,20 +163,22 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
     );
     return;
   }
-  const newTokenStartDate = webhook.fechaCreacion.split(".")[0];
 
+  const newTokenStartDate = webhook.fechaCreacion.split(".")[0];
   const newToken: TokenRequestCreationBody = {
     idSize: deliveryTokenReservation?.IdSize!,
     idBox: webhookData.Box!,
     fechaInicio: newTokenStartDate,
-    fechaFin: deliveryTokenReservation?.FechaFin!,
+    fechaFin: deliveryTokenReservation?.FechaFin ?? undefined,
     confirmado: true,
   };
+
   const userTokenCreationResponse = await addTokenToServer(
     newToken,
     webhook.nroSerieLocker,
     bearer_token,
   );
+
   if (!userTokenCreationResponse.ok) {
     const error = await userTokenCreationResponse.text();
     console.log(
@@ -170,17 +188,31 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
     console.log("Bearer token:", bearer_token);
     return;
   }
+
   const token2 = await userTokenCreationResponse.text();
   await db
     .update(reservas)
-    .set({ Token2: parseInt(token2) })
+    .set({ Token2: parseInt(token2), status: "ubicada" })
     .where(eq(reservas.identifier, deliveryTokenReservation?.identifier!));
 
-  const lockerAddress = await getLockerAddress(webhook.nroSerieLocker);
-  await sendPackageDeliveredEmail({
-    to: deliveryTokenReservation?.client!,
-    checkoutTime: deliveryTokenReservation?.FechaFin!,
-    userToken: token2,
-    lockerAddress: lockerAddress!,
-  });
+  const {
+    lockerAddress,
+    storeName
+  } = await getLockerAddress(webhook.nroSerieLocker);
+  if (deliveryTokenReservation?.FechaFin) {
+    await sendPackageDeliveredEmail({
+      to: deliveryTokenReservation.client!,
+      checkoutTime: deliveryTokenReservation.FechaFin,
+      userToken: token2,
+      lockerAddress: lockerAddress!,
+      storeName
+    });
+  } else {
+    await sendPackageReadyEmail({
+      to: deliveryTokenReservation?.client!,
+      userToken: token2,
+      storeAddress: lockerAddress!,
+      storeName,
+    });
+  }
 }

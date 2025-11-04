@@ -84,5 +84,3 @@ export const clerkRouter = createTRPCRouter({
       }
     }),
 });
-
-export type City = RouterOutputs["city"]["get"][number];

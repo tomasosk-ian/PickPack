@@ -32,6 +32,10 @@ export const cities = sqliteTable(
   }),
 );
 
+export const citiesRelations = relations(cities, ({ many }) => ({
+  stores: many(stores)
+}));
+
 export const clients = sqliteTable(
   "clients",
   {
@@ -71,6 +75,7 @@ export const stores = sqliteTable(
     firstTokenUseTime: integer("first_token_use_time").default(15),
     entidadId: text("entidadId")
       .references(() => companies.id, { onDelete: "cascade" }),
+    backofficeEmail: text("backofficeEmail"),
   },
   (vt) => ({
     compoundKey: primaryKey(vt.identifier),
@@ -95,6 +100,7 @@ export const storesLockers = sqliteTable(
   {
     storeId: text("storeId", { length: 255 }).notNull(),
     serieLocker: text("serieLocker", { length: 255 }).notNull(),
+    isPrivate: integer({ mode: "boolean" }).default(false),
   },
   (t) => ({
     key: primaryKey(t.storeId, t.serieLocker),
@@ -164,6 +170,7 @@ export const sizesRelations = relations(sizes, ({ one }) => ({
   }),
 }));
 
+// de acá sale el bendito nReserve
 export const reservasToClients = sqliteTable(
   "reservasToClients",
   {
@@ -184,6 +191,7 @@ export const reservasToClientsRelations = relations(
     }),
   }),
 );
+
 export const reservas = sqliteTable(
   "reservas",
   {
@@ -208,6 +216,13 @@ export const reservas = sqliteTable(
     mpPagadoOk: integer("mpPagadoOk", { mode: "boolean" }).default(false),
     entidadId: text("entidadId")
       .references(() => companies.id, { onDelete: "cascade" }),
+    status: text("status", { enum: [
+      "pendiente_ubic",
+      "ubicada",
+      "retirada"
+    ] }), // a priori para la integración con tiendastic
+    mode: text("mode", { enum: ["takeAway", "pickPack"] }).default("pickPack"),
+    externalNReserve: text("externalNReserve"),
   },
   (vt) => ({
     compoundKey: primaryKey(vt.identifier),

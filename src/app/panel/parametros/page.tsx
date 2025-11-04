@@ -268,8 +268,7 @@ export default function LockerOcupationPage() {
   const { data: timeOut } = api.params.getTimeOut.useQuery();
   const { data: privateConfigs, refetch: refetchPrivate } = api.config.listPrivateAdmin.useQuery();
   const { data: publicConfigs, refetch: refetchPublic } = api.config.listPublicAdmin.useQuery();
-  // const { mutateAsync: deletePrivateKey } = api.config.deletePrivateKeyAdmin.useMutation();
-  // const { mutateAsync: deletePublicKey } = api.config.deletePublicKeyAdmin.useMutation();
+  const { data: currentEntityId } = api.companies.current.useQuery();
 
   async function invalidate() {
     await refetchPrivate();
@@ -288,22 +287,12 @@ export default function LockerOcupationPage() {
         </div>
         <div className="flex flex-row">
           <FormPrivateGeneric invalidate={invalidate} keyName="token_empresa" label="Token" title="Configurar token de empresa" />
+          <FormPrivateGeneric invalidate={invalidate} keyName="entidad_lockers_privados_key" label="Entidad Lockers" title="Configurar clave de entidad" />
         </div>
       </div>
       <section className="space-y-2">
         <div>(Servidor) TimeOut Mobbex: {timeOut}</div>
-        {/* {(privateConfigs ?? []).map(v => <div key={`pc-${v.key}`}>
-          <Button onClick={async () => {
-            await deletePrivateKey({ key: v.key as PrivateConfigKeys });
-            await invalidate();
-          }}><XIcon /></Button> (Configuración privada) {PrivateConfigClaves[v.key as PrivateConfigKeys]}: {v.value}
-        </div>)}
-        {(publicConfigs ?? []).map(v => <div key={`pc-${v.key}`}>
-          <Button onClick={async () => {
-            await deletePublicKey({ key: v.key as PublicConfigKeys });
-            await invalidate();
-          }}><XIcon /></Button> (Configuración pública) {PublicConfigClaves[v.key as PublicConfigKeys]}: {v.value}
-        </div>)} */ }
+        <div>ID de entidad: {currentEntityId}</div>
       </section>
     </LayoutContainer>
   );

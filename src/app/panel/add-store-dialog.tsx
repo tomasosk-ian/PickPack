@@ -28,7 +28,6 @@ import {
 import { asTRPCError } from "~/lib/errors";
 import { City } from "~/server/api/routers/city";
 import { Locker } from "~/server/api/routers/lockers";
-import { Store } from "~/server/api/routers/store";
 import { api } from "~/trpc/react";
 import { UploadButton } from "~/utils/uploadthing";
 
@@ -44,6 +43,7 @@ export function AddStoreDialog(props: { cities: City[]; lockers: Locker[] }) {
   const [serieLocker, setSerieLocker] = useState("");
   const [address, setAddress] = useState("");
   const [organizationName, setOrganizationName] = useState("");
+  const [backofficeEmail, setBackofficeEmail] = useState("");
   const [description, setDescription] = useState("");
 
   const router = useRouter();
@@ -58,6 +58,7 @@ export function AddStoreDialog(props: { cities: City[]; lockers: Locker[] }) {
         organizationName,
         serieLocker,
         description,
+        backofficeEmail,
       });
 
       toast.success("Local creado correctamente");
@@ -166,6 +167,14 @@ export function AddStoreDialog(props: { cities: City[]; lockers: Locker[] }) {
               id="orgname"
               value={organizationName!}
               onChange={(e) => setOrganizationName(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="email">Email backoffice</Label>
+            <Input
+              id="email"
+              value={backofficeEmail!}
+              onChange={(e) => setBackofficeEmail(e.target.value)}
             />
           </div>
           <div>

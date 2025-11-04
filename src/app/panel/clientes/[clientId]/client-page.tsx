@@ -50,7 +50,7 @@ export default function ClientPage({
   const { mutateAsync: renameclient, isLoading } =
     api.clients.change.useMutation();
 
-  const { data: stores } = api.store.get.useQuery();
+  const { data: stores } = api.store.listPublic.useQuery();
   const router = useRouter();
 
   async function handleChange() {
@@ -158,10 +158,9 @@ export default function ClientPage({
                         className="border-none"
                         href={`/panel/reservas/${reserva.nReserve}`}
                         leading={reserva.nReserve}
-                        title={`Local: ${
-                          stores?.find((x) => x.lockers.some(l => l.serieLocker === reserva.NroSerie))
-                            ?.name
-                        }. Fecha inicio: ${reserva.FechaInicio?.split("T")[0]}. Fecha fin: ${reserva.FechaFin?.split("T")[0]}`}
+                        title={`Local: ${stores?.find((x) => x.lockers.some(l => l.serieLocker === reserva.NroSerie))
+                          ?.name
+                          }. Fecha inicio: ${reserva.FechaInicio?.split("T")[0]}. Fecha fin: ${reserva.FechaFin?.split("T")[0]}`}
                       />
                     ));
                   })}

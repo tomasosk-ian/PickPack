@@ -11,20 +11,33 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import type { Translations } from "~/translations";
+
 export default function CitySelector({ t, ...props }: {
   cities: City[];
   city: City | null;
   setCity: (city: City) => void;
   setStores: (stores: Store[] | undefined) => void;
   t: Translations,
+  entityId?: string | null,
+  jwt?: string | null,
 }) {
   const router = useRouter();
-  if (props.city != null) {
-    const stores = api.store.getByCity.useQuery({
+  if (props.city != null && typeof props.jwt === "string" && props.entityId) {
+    const stores = api.store.getByCityFromEntity.useQuery({
+      cityId: props.city.identifier,
+      entityId: props.entityId,
+      jwt: props.jwt
+    });
+    
+    props.setStores(stores.data);
+  } else if (props.city != null) {
+    const stores = api.store.getByCityPublic.useQuery({
       cityId: props.city.identifier,
     });
+    
     props.setStores(stores.data);
   }
+
   async function handleChange(city: City) {
     try {
       props.setCity(city);

@@ -205,5 +205,3 @@ export const mpRouter = createTRPCRouter({
       return listo;
     }),
 });
-
-// export type City = RouterOutputs["city"]["get"][number];

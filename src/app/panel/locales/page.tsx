@@ -12,7 +12,7 @@ export default async function Home() {
     return <></>;
   }
 
-  const cities = await api.city.get.query();
+  const cities = await api.city.listAll.query();
   const stores = await api.store.getProt.query();
   const lockers = await api.locker.get.query();
   if ("error" in lockers) {
