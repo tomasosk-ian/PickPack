@@ -48,11 +48,13 @@ export async function editTokenToServer(
 
 export async function sendPackageReadyEmail({
   to,
-  lockerAddress,
+  storeName,
+  storeAddress,
   userToken,
 }: {
   to: string;
-  lockerAddress: string;
+  storeName: string;
+  storeAddress: string;
   userToken: string;
 }) {
   var QRCode = require("qrcode");
@@ -67,7 +69,7 @@ export async function sendPackageReadyEmail({
     subject: "PICKPACK: Paquete listo para ser recogido",
     html: `
 			<body>
-				<p>El paquete destinado a su locker reservado en ${lockerAddress} fue preparado.</p>
+				<p>El paquete destinado a su locker reservado en ${storeName} en ${storeAddress} fue preparado.</p>
 				<p><strong>Su código de acceso (Token) para retirar su paquete es ${userToken}</strong></p>
 				<p>Atentamente,</p>
 				<p>el equipo de <strong>PickPack</strong></p>
@@ -95,11 +97,13 @@ export async function sendPackageReadyEmail({
 export async function sendPackageDeliveredEmail({
   to,
   lockerAddress,
+  storeName,
   checkoutTime,
   userToken,
 }: {
   to: string;
   lockerAddress: string;
+  storeName: string;
   checkoutTime: string;
   userToken: string;
 }) {
@@ -118,7 +122,7 @@ export async function sendPackageDeliveredEmail({
     html: `
 			<body>
 
-				<p>El paquete destinado a su locker reservado en ${lockerAddress} fue entregado. Le recordamos que el tiempo límite para pasarlo a buscar es ${horaFin} del ${fechaFin}</p>
+				<p>El paquete destinado a su locker reservado en ${storeName} en ${lockerAddress} fue entregado. Le recordamos que el tiempo límite para pasarlo a buscar es ${horaFin} del ${fechaFin}</p>
 
 				<p><strong>Su código de acceso (Token) para retirar su paquete es ${userToken}</strong></p>
 
@@ -281,10 +285,10 @@ export async function editTokenToServerWithStoreExtraTime(
 
 export async function getLockerAddress(lockerSerial: string) {
   const lockerAddressDbResult = await db
-    .select({ lockerAddress: stores.address })
+    .select({ lockerAddress: stores.address, storeName: stores.name })
     .from(stores)
     .innerJoin(storesLockers, eq(stores.identifier, storesLockers.storeId))
     .where(eq(storesLockers.serieLocker, lockerSerial));
-  const { lockerAddress } = lockerAddressDbResult[0]!;
-  return lockerAddress;
+  
+  return lockerAddressDbResult[0]!;
 }
