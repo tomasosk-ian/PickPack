@@ -195,19 +195,24 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
     .set({ Token2: parseInt(token2), status: "ubicada" })
     .where(eq(reservas.identifier, deliveryTokenReservation?.identifier!));
 
-  const lockerAddress = await getLockerAddress(webhook.nroSerieLocker);
+  const {
+    lockerAddress,
+    storeName
+  } = await getLockerAddress(webhook.nroSerieLocker);
   if (deliveryTokenReservation?.FechaFin) {
     await sendPackageDeliveredEmail({
       to: deliveryTokenReservation.client!,
       checkoutTime: deliveryTokenReservation.FechaFin,
       userToken: token2,
       lockerAddress: lockerAddress!,
+      storeName
     });
   } else {
     await sendPackageReadyEmail({
       to: deliveryTokenReservation?.client!,
       userToken: token2,
-      lockerAddress: lockerAddress!,
+      storeAddress: lockerAddress!,
+      storeName,
     });
   }
 }
