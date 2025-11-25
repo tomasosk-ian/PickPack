@@ -7,6 +7,7 @@ export const Permisos = {
   "panel:clientes": "(Panel) Clientes",
   "panel:reservas": "(Panel) Reservas",
   "panel:cupones": "(Panel) Cupones",
+  "logs": "(Panel) Logs",
 };
 
 export const PermisosVisibles: { [key in PermisosValue]: boolean } = {
@@ -18,6 +19,7 @@ export const PermisosVisibles: { [key in PermisosValue]: boolean } = {
   "panel:params": true,
   "panel:reservas": true,
   "panel:sizes": true,
+  "logs": true,
 };
 
 // si el usuario tiene este permiso quiere decir que cualquier llamada a

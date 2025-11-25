@@ -186,6 +186,7 @@ export const storeRouter = createTRPCRouter({
         description: z.string().min(0).max(1023),
         serieLocker: z.string().nullable(),
         backofficeEmail: z.string().max(255),
+        batitiendaPickupPointId: z.string().max(255)
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -206,6 +207,7 @@ export const storeRouter = createTRPCRouter({
         description: input.description,
         entidadId: ctx.orgId,
         backofficeEmail: input.backofficeEmail,
+        stic_pickup_point_id: input.batitiendaPickupPointId,
       });
 
       if (input.serieLocker !== null) {
@@ -232,6 +234,7 @@ export const storeRouter = createTRPCRouter({
         serieLockersPrivados: z.array(z.string()).nullable(),
         firstTokenUseTime: z.number(),
         backofficeEmail: z.string().nullable(),
+        batitiendaPickupPointId: z.string().max(255).nullable()
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -257,6 +260,7 @@ export const storeRouter = createTRPCRouter({
             organizationName: input.organizationName,
             firstTokenUseTime: input.firstTokenUseTime,
             backofficeEmail: input.backofficeEmail,
+            stic_pickup_point_id: input.batitiendaPickupPointId,
           })
           .where(and(
             eq(stores.identifier, input.identifier),

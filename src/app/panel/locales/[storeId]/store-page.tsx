@@ -69,6 +69,9 @@ export default function StorePage(props: {
   const [backofficeEmail, setBackofficeEmail] = useState(
     props.store.backofficeEmail!,
   );
+  const [batitiendaPickupPointId, setBatitiendaPickupPointId] = useState(
+    props.store.stic_pickup_point_id ?? "",
+  );
   const [firstTokenUseTime, setFirstTokenUseTime] = useState(props.store.firstTokenUseTime!);
   const [loading, setLoading] = useState(false);
   const { mutateAsync: renameStore, isLoading } =
@@ -97,6 +100,7 @@ export default function StorePage(props: {
         serieLockersPrivados,
         firstTokenUseTime,
         backofficeEmail,
+        batitiendaPickupPointId,
       });
       toast.success("Se ha modificado el local.");
       router.refresh();
@@ -193,6 +197,14 @@ export default function StorePage(props: {
                       id="email"
                       value={backofficeEmail}
                       onChange={(e) => setBackofficeEmail(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="batitiendaPickupPointId">ID Pickup Point Batitienda</Label>
+                    <Input
+                      id="batitiendaPickupPointId"
+                      value={batitiendaPickupPointId!}
+                      onChange={(e) => setBatitiendaPickupPointId(e.target.value)}
                     />
                   </div>
                   <div className="col-span-2">
