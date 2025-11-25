@@ -14,7 +14,7 @@ export class TiendaStic {
 
   private postRequest(endpoint: string, body: unknown): Promise<Response> {
     endpoint = endpoint.trim();
-    if (endpoint.startsWith("/")) {
+    if (!endpoint.startsWith("/")) {
       endpoint = "/" + endpoint;
     }
   
