@@ -67,19 +67,19 @@ export async function sticProcessOrder({
   const { store, locker, size } = await findStoreAndLocker(entityId, tokenEmpresa, sticOrder);
   if (!store) {
     console.error(`[${entityId}] stic ord-confirm no store available`, store, 'para pickup point id', sticOrder.shipping?.pickup_point_id);
-    await db.insert(schema.errorLogs).values({ text: `(entidad ID: ${entityId}) Webhook Stic: no se encontró local` });
+    await db.insert(schema.errorLogs).values({ text: `(entidad ID: ${entityId}) Webhook Stic: no se encontró local para pickup point ${sticOrder.shipping?.pickup_point_id}` });
     return NextResponse.json(null, { status: 500 });
   }
 
   if (!locker) {
     console.error(`[${entityId}] stic ord-confirm no locker available`, locker, 'para store', store);
-    await db.insert(schema.errorLogs).values({ text: `(entidad ID: ${entityId}) Webhook Stic: no se encontró locker para local "${store.name}"` });
+    await db.insert(schema.errorLogs).values({ text: `(entidad ID: ${entityId}) Webhook Stic: no se encontró locker para local "${store.name}" para pickup point ${sticOrder.shipping?.pickup_point_id}` });
     return NextResponse.json(null, { status: 500 });
   }
 
   if (!size) {
     console.error(`[${entityId}] stic ord-confirm no size available`, size, 'para locker', locker, 'en store', store);
-    await db.insert(schema.errorLogs).values({ text: `(entidad ID: ${entityId}) Webhook Stic: no se encontró tamaño de locker "${locker.serieLocker}" para local "${store.name}"` });
+    await db.insert(schema.errorLogs).values({ text: `(entidad ID: ${entityId}) Webhook Stic: no se encontró tamaño de locker "${locker.serieLocker}" para local "${store.name}" para pickup point ${sticOrder.shipping?.pickup_point_id}` });
     return NextResponse.json(null, { status: 500 });
   }
 
