@@ -279,15 +279,14 @@ export default function LockerOcupationPage() {
     <LayoutContainer>
       <div className="w-full flex flex-col justify-between">
         <h2 className="text-2xl font-semibold mb-3">Parámetros</h2>
-        <div className="flex flex-row">
+        <div className="grid grid-cols-2">
           {/* <InsertClavePublica invalidate={invalidate} />
           <InsertClavePrivada invalidate={invalidate} /> */}
           <FormMetodoPago invalidate={invalidate} />
           <FormPlazoReserva invalidate={invalidate} />
-        </div>
-        <div className="flex flex-row">
           <FormPrivateGeneric invalidate={invalidate} keyName="token_empresa" label="Token" title="Configurar token de empresa" />
           <FormPrivateGeneric invalidate={invalidate} keyName="entidad_lockers_privados_key" label="Entidad Lockers" title="Configurar clave de entidad" />
+          <FormPrivateGeneric invalidate={invalidate} keyName="batitienda_key" label="API Key batitienda" title="Token API de Batitienda" />
         </div>
       </div>
       <section className="space-y-2">

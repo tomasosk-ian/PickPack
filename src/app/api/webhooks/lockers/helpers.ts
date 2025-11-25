@@ -283,12 +283,16 @@ export async function editTokenToServerWithStoreExtraTime(
   return editDeliveryTokenResponse;
 }
 
-export async function getLockerAddress(lockerSerial: string) {
+export async function getLockerAddressForEmail(lockerSerial: string) {
   const lockerAddressDbResult = await db
-    .select({ lockerAddress: stores.address, storeName: stores.name })
+    .select({
+      lockerAddress: stores.address,
+      storeName: stores.name,
+      storeNameStic: stores.stic_pickup_point_name
+    })
     .from(stores)
     .innerJoin(storesLockers, eq(stores.identifier, storesLockers.storeId))
     .where(eq(storesLockers.serieLocker, lockerSerial));
-  
+
   return lockerAddressDbResult[0]!;
 }
