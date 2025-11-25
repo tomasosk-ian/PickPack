@@ -7,7 +7,7 @@ import dayjs from "dayjs";
 
 export default async function Home() {
   const { perms } = await api.user.self.query();
-  if (!tienePermiso(perms, "logs")) {
+  if (!tienePermiso(perms, "panel:logs")) {
     redirect("/accessdenied");
     return <></>;
   }

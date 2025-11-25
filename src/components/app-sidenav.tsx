@@ -13,6 +13,7 @@ import {
   AreaChartIcon,
   BanIcon,
   Building2,
+  ScrollIcon,
 } from "lucide-react";
 import { About } from "./about-dialog";
 import { usePerms } from "./perms-provider";
@@ -87,6 +88,9 @@ export default function AppSidenav() {
         </SidenavItem>}
         {hasPerm("panel:cupones") && <SidenavItem icon={<PercentCircleIcon />} href="/panel/cupones">
           Cupones{" "}
+        </SidenavItem>}
+        {hasPerm("panel:logs") && <SidenavItem icon={<ScrollIcon />} href="/panel/logs">
+          Logs{" "}
         </SidenavItem>}
         <div className="bottom-0 right-0 px-5">
           <About />
