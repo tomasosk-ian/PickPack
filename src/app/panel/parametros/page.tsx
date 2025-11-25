@@ -288,6 +288,7 @@ export default function LockerOcupationPage() {
         <div className="flex flex-row">
           <FormPrivateGeneric invalidate={invalidate} keyName="token_empresa" label="Token" title="Configurar token de empresa" />
           <FormPrivateGeneric invalidate={invalidate} keyName="entidad_lockers_privados_key" label="Entidad Lockers" title="Configurar clave de entidad" />
+          <FormPrivateGeneric invalidate={invalidate} keyName="batitienda_key" label="API Key batitienda" title="Configurar clave de API de Batitienda" />
         </div>
       </div>
       <section className="space-y-2">
