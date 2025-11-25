@@ -151,3 +151,5 @@ export const sticOrderListResponseSchema = z.object({
     })
   )
 });
+
+export type SticOrder = (typeof sticOrderListResponseSchema._output)["results"][number];

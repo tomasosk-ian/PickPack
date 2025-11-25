@@ -1,5 +1,5 @@
 import { db, schema } from "~/server/db";
-import { sticOrderListRequestSchema, sticOrderListResponseSchema } from "./models";
+import { SticOrder, sticOrderListRequestSchema, sticOrderListResponseSchema } from "./models";
 import { PrivateConfigKeys } from "../config";
 import { eq } from "drizzle-orm";
 
@@ -28,7 +28,7 @@ export class TiendaStic {
     });
   }
 
-  public async getOrder(id: number): Promise<(typeof sticOrderListResponseSchema._output)["results"][number]>  {
+  public async getOrder(id: number): Promise<SticOrder>  {
     const body: typeof sticOrderListRequestSchema._input = {
       fetch: {
         billing: false,
