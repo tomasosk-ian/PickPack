@@ -4,11 +4,12 @@ import { NextResponse } from "next/server";
 import { env } from "~/env";
 import { PrivateConfigKeys } from "~/lib/config";
 import { dcmCreateToken1, dcmGetLockerSizes, dcmGetToken, DCMv2TokenCreate } from "~/lib/dcm";
-import { sticEvtWebhookConfirmedOrderSchema } from "~/lib/stic/models";
+import { sticEvtWebhookConfirmedOrderSchema, SticOrder } from "~/lib/stic/models";
 import { createId } from "~/lib/utils";
 import { sizesList } from "~/server/api/routers/sizes";
 import { db, schema } from "~/server/db";
 import utc from "dayjs/plugin/utc";
+import { tiendastic } from "~/lib/stic/requests";
 
 dayjs.extend(utc);
 
@@ -36,15 +37,49 @@ export async function sticProcessOrder({
   const tokenEmpresa = await getTokenEmpresa(entityId);
   if (!tokenEmpresa) {
     console.error(`[${entityId}] stic ord-confirm no token empresa for dcm`);
+    await db.insert(schema.errorLogs).values({ text: `(entidad ID: ${entityId}) Webhook Stic: sin token empresa` });
     return NextResponse.json(null, { status: 500 });
   }
 
-  // TODO: CAMBIAR
-  // Agarra cualquier store, cualquier locker.
-  const { store, locker, size } = await findAnyStoreAndLocker(entityId, tokenEmpresa);
+  let tiendaStic;
+  try {
+    tiendaStic = await tiendastic();
+  } catch (e) {
+    console.error("tiendastic error:", e);
+    await db.insert(schema.errorLogs).values({ text: `(entidad ID: ${entityId}) Webhook Stic: sin clave de API o error de configuración` });
+    return NextResponse.json(null, { status: 500 });
+  }
 
-  if (!store || !locker || !size) {
-    console.error(`[${entityId}] stic ord-confirm no store or locker available`, store, locker);
+  let sticOrder;
+  try {
+    sticOrder = await tiendaStic.getOrder(body.OrderId);
+  } catch (e) {
+    console.error("tiendastic order error:", e, "for order", body.OrderId);
+    await db.insert(schema.errorLogs).values({ text: `(entidad ID: ${entityId}) Webhook Stic: error al levantar pedido de tiendastic ${body.OrderId}` });
+    return NextResponse.json(null, { status: 500 });
+  }
+
+  if (!sticOrder.shipping?.pickup_point_id) {
+    await db.insert(schema.errorLogs).values({ text: `(entidad ID: ${entityId}) Webhook Stic: pedido sin pickup point: ${body.OrderId}` });
+    return NextResponse.json(null, { status: 200 }); // no es un error per se
+  }
+
+  const { store, locker, size } = await findStoreAndLocker(entityId, tokenEmpresa, sticOrder);
+  if (!store) {
+    console.error(`[${entityId}] stic ord-confirm no store available`, store, 'para pickup point id', sticOrder.shipping?.pickup_point_id);
+    await db.insert(schema.errorLogs).values({ text: `(entidad ID: ${entityId}) Webhook Stic: no se encontró local` });
+    return NextResponse.json(null, { status: 500 });
+  }
+
+  if (!locker) {
+    console.error(`[${entityId}] stic ord-confirm no locker available`, locker, 'para store', store);
+    await db.insert(schema.errorLogs).values({ text: `(entidad ID: ${entityId}) Webhook Stic: no se encontró locker para local "${store.name}"` });
+    return NextResponse.json(null, { status: 500 });
+  }
+
+  if (!size) {
+    console.error(`[${entityId}] stic ord-confirm no size available`, size, 'para locker', locker, 'en store', store);
+    await db.insert(schema.errorLogs).values({ text: `(entidad ID: ${entityId}) Webhook Stic: no se encontró tamaño de locker "${locker.serieLocker}" para local "${store.name}"` });
     return NextResponse.json(null, { status: 500 });
   }
 
@@ -99,7 +134,7 @@ export async function sticProcessOrder({
     [token1, size.nombre ?? ""]
   ];
 
-  const storeName = store.name;
+  const storeName = sticOrder.shipping?.pickup_point_name ?? store.name; // <-- para el mail
   const storeAddress = store.address;
   const fechaInicio = reserve?.FechaInicio ?? "-";
   const fechaFin = reserve?.FechaFin ?? "-";
@@ -255,14 +290,12 @@ async function getHookClientByEmail(name: string, email: string, entityId: strin
   return client;
 }
 
-// TODO: CAMBIAR ASIGNACION
-// TODO: CAMBIAR ASIGNACION
-// TODO: CAMBIAR ASIGNACION
-// TODO: CAMBIAR ASIGNACION
-// TODO: CAMBIAR ASIGNACION
-async function findAnyStoreAndLocker(entityId: string, bearerToken: string) {
-  const allPossibleStores = await db.query.stores.findMany({
-    where: eq(schema.stores.entidadId, entityId),
+async function findStoreAndLocker(entityId: string, bearerToken: string, sticOrder: SticOrder) {
+  const possiblePickupStores = await db.query.stores.findMany({
+    where: and(
+      eq(schema.stores.entidadId, entityId),
+      eq(schema.stores.stic_pickup_point_id, String(sticOrder.shipping!.pickup_point_id!))
+    ),
     with: {
       lockers: true,
     },
@@ -274,11 +307,13 @@ async function findAnyStoreAndLocker(entityId: string, bearerToken: string) {
       entidadId: true,
       identifier: true,
       backofficeEmail: true,
+      stic_pickup_point_id: true,
+      stic_pickup_point_name: true,
     }
   });
 
   let store = null, locker = null, size = null;
-  for (const possibleStore of allPossibleStores) {
+  for (const possibleStore of possiblePickupStores) {
     const anyLocker = await db.query.storesLockers.findFirst({
       where: eq(schema.storesLockers.storeId, possibleStore.identifier)
     });
@@ -296,6 +331,12 @@ async function findAnyStoreAndLocker(entityId: string, bearerToken: string) {
     store = possibleStore;
     locker = anyLocker;
     break;
+  }
+
+  if (store && sticOrder.shipping?.pickup_point_name) {
+    await db.update(schema.stores)
+      .set({ stic_pickup_point_name: sticOrder.shipping.pickup_point_name })
+      .where(eq(schema.stores.identifier, store.identifier));
   }
 
   return { store, locker, lockerSerial: locker?.serieLocker ?? null, size };

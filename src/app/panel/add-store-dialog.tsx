@@ -45,6 +45,7 @@ export function AddStoreDialog(props: { cities: City[]; lockers: Locker[] }) {
   const [organizationName, setOrganizationName] = useState("");
   const [backofficeEmail, setBackofficeEmail] = useState("");
   const [description, setDescription] = useState("");
+  const [batitiendaPickupPointId, setBatitiendaPickupPointId] = useState("");
 
   const router = useRouter();
 
@@ -59,6 +60,7 @@ export function AddStoreDialog(props: { cities: City[]; lockers: Locker[] }) {
         serieLocker,
         description,
         backofficeEmail,
+        batitiendaPickupPointId,
       });
 
       toast.success("Local creado correctamente");
@@ -175,6 +177,14 @@ export function AddStoreDialog(props: { cities: City[]; lockers: Locker[] }) {
               id="email"
               value={backofficeEmail!}
               onChange={(e) => setBackofficeEmail(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="batitiendaPickupPointId">ID Pickup Point Batitienda</Label>
+            <Input
+              id="batitiendaPickupPointId"
+              value={batitiendaPickupPointId!}
+              onChange={(e) => setBatitiendaPickupPointId(e.target.value)}
             />
           </div>
           <div>

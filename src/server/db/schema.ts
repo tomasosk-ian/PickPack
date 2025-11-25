@@ -76,6 +76,8 @@ export const stores = sqliteTable(
     entidadId: text("entidadId")
       .references(() => companies.id, { onDelete: "cascade" }),
     backofficeEmail: text("backofficeEmail"),
+    stic_pickup_point_id: text(),
+    stic_pickup_point_name: text(),
   },
   (vt) => ({
     compoundKey: primaryKey(vt.identifier),
@@ -511,3 +513,12 @@ export const permisosRelations = relations(permisos, ({ one }) => ({
     references: [roles.id],
   }),
 }));
+
+export const errorLogs = sqliteTable(
+  "errorLogs",
+  {
+    id: integer().primaryKey(),
+    date: integer({ mode: "timestamp" }).notNull().$default(() => new Date()),
+    text: text().notNull(),
+  }
+);

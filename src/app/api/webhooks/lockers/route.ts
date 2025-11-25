@@ -15,10 +15,9 @@ import {
   sendPackageDeliveredEmail,
   sendGoodbyeEmail,
   editTokenToServerWithStoreExtraTime,
-  getLockerAddress,
+  getLockerAddressForEmail,
   getTokenUseExtraTime,
   addMinutes,
-  sendEmailTest,
   sendPackageReadyEmail,
 } from "./helpers";
 import { PrivateConfigKeys } from "~/lib/config";
@@ -197,22 +196,24 @@ async function tokenUseResponseHandler(webhook: LockerWebhook) {
 
   const {
     lockerAddress,
+    storeNameStic,
     storeName
-  } = await getLockerAddress(webhook.nroSerieLocker);
+  } = await getLockerAddressForEmail(webhook.nroSerieLocker);
+
   if (deliveryTokenReservation?.FechaFin) {
     await sendPackageDeliveredEmail({
       to: deliveryTokenReservation.client!,
       checkoutTime: deliveryTokenReservation.FechaFin,
       userToken: token2,
       lockerAddress: lockerAddress!,
-      storeName
+      storeName: storeNameStic ?? storeName,
     });
   } else {
     await sendPackageReadyEmail({
       to: deliveryTokenReservation?.client!,
       userToken: token2,
       storeAddress: lockerAddress!,
-      storeName,
+      storeName: storeNameStic ?? storeName,
     });
   }
 }

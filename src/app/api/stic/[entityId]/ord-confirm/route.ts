@@ -14,6 +14,7 @@ export async function POST(
 
   if (!entidad) {
     console.error(`[${entityId}] stic ord-confirm entity not found`);
+    await db.insert(schema.errorLogs).values({ text: `(entidad ID: ${entityId}) Webhook Stic: entidad no encontrada` });
     return NextResponse.json(null, { status: 404 });
   }
 
@@ -21,6 +22,7 @@ export async function POST(
   const parsedBody = await sticEvtWebhookConfirmedOrderSchema.safeParseAsync(requestBody);
   if (parsedBody.error) {
     console.error(`[${entityId}] stic ord-confirm invalid body`, requestBody, "with errors", parsedBody.error);
+    await db.insert(schema.errorLogs).values({ text: `(entidad ID: ${entityId}) Webhook Stic: recibido cuerpo inválido con errores: ${JSON.stringify(parsedBody.error)}` });
     return NextResponse.json(null, { status: 400 });
   }
 
