@@ -22,6 +22,7 @@ export const PrivateConfigClaves = {
   "mobbex_access_token": "Token de acceso de Mobbex",
   "token_empresa": "Token Empresa",
   "entidad_lockers_privados_key": "Clave para acceso de entidad particular",
+  "batitienda_key": "API Key batitienda",
 }
 
 export type PrivateConfigKeys = keyof typeof PrivateConfigClaves;
