@@ -150,9 +150,9 @@ export async function sticProcessOrder({
         eq(schema.privateConfig.entidadId, entityId),
       ),
     })
-  )?.value!;
+  )?.value;
 
-  if (email_sender.trim() === "") {
+  if (email_sender?.trim() === "") {
     email_sender = undefined;
   }
 
